@@ -437,8 +437,7 @@ export async function executeStreamWithFallback(
     if (!provider) continue;
 
     try {
-      // Test the stream by getting the first chunk
-      const stream = provider.stream({
+      const generator = provider.stream({
         model: candidate.model,
         messages,
         maxTokens,
@@ -447,15 +446,30 @@ export async function executeStreamWithFallback(
         signal,
       });
 
+      // Advance generator once to verify HTTP connection succeeds
+      const firstResult = await generator.next();
+
+      // Wrap back into a clean stream generator that yields firstResult then remaining chunks
+      async function* createVerifiedStream() {
+        if (!firstResult.done) {
+          yield firstResult.value;
+        }
+        for await (const chunk of generator) {
+          yield chunk;
+        }
+      }
+
+      breaker.recordSuccess(candidate.provider);
+
       return {
-        stream,
+        stream: createVerifiedStream(),
         actualProvider: candidate.provider,
         actualModel: candidate.model,
       };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       breaker.recordFailure(candidate.provider);
-      log.warn(`Stream provider ${candidate.provider}/${candidate.model} failed`, {
+      log.warn(`Stream provider ${candidate.provider}/${candidate.model} connection failed — failing over`, {
         error: lastError.message,
       });
     }
