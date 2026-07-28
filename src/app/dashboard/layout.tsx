@@ -19,18 +19,17 @@ import { DsProviderBadge } from '@/components/design-system';
 interface NavItem {
   href: string;
   label: string;
-  description: string;
   icon: LucideIcon;
   shortcut?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/dashboard', label: 'Playground Studio', description: 'Real-time execution studio', icon: Terminal, shortcut: '⌘1' },
-  { href: '/dashboard/history', label: 'Request Audit Logs', description: 'Detailed execution history', icon: History, shortcut: '⌘2' },
-  { href: '/dashboard/stats', label: 'Analytics & Savings', description: 'Performance & cost metrics', icon: BarChart3, shortcut: '⌘3' },
-  { href: '/dashboard/rules', label: 'Routing Engine Rules', description: 'Config-driven policy manager', icon: Sliders, shortcut: '⌘4' },
-  { href: '/dashboard/eval', label: 'Eval Harness', description: 'LLM-as-judge benchmark suite', icon: FlaskConical, shortcut: '⌘5' },
-  { href: '/dashboard/keys', label: 'API Credentials', description: 'Hashed API key vault', icon: Key, shortcut: '⌘6' },
+  { href: '/dashboard', label: 'Playground Studio', icon: Terminal, shortcut: '⌘1' },
+  { href: '/dashboard/history', label: 'Request Audit Logs', icon: History, shortcut: '⌘2' },
+  { href: '/dashboard/stats', label: 'Analytics & Costs', icon: BarChart3, shortcut: '⌘3' },
+  { href: '/dashboard/rules', label: 'Routing Policy', icon: Sliders, shortcut: '⌘4' },
+  { href: '/dashboard/eval', label: 'Eval Harness', icon: FlaskConical, shortcut: '⌘5' },
+  { href: '/dashboard/keys', label: 'API Credentials', icon: Key, shortcut: '⌘6' },
 ];
 
 export default function DashboardLayout({
@@ -42,15 +41,15 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#07080e] bg-canvas-pattern">
-      {/* ── Sidebar Navigation (Level 1 Elevation) ─────────── */}
-      <aside className="w-[285px] flex-shrink-0 border-r border-white/10 bg-[#0c0d15] flex flex-col justify-between">
+      {/* ── Sidebar Navigation ─────────────────────────── */}
+      <aside className="w-[260px] flex-shrink-0 border-r border-white/10 bg-[#0c0d15] flex flex-col justify-between">
         <div>
           {/* Header Brand */}
-          <div className="h-20 flex items-center px-6 border-b border-white/10">
-            <Link href="/dashboard" className="flex items-center gap-3.5 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600 p-[1.5px] shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-200">
+          <div className="h-16 flex items-center px-6 border-b border-white/10">
+            <Link href="/dashboard" className="flex items-center gap-3 group">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600 p-[1.5px] shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-200">
                 <div className="w-full h-full bg-[#0c0d15] rounded-[10.5px] flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-indigo-400 fill-indigo-400/20" />
+                  <Zap className="w-4 h-4 text-indigo-400 fill-indigo-400/20" />
                 </div>
               </div>
               <div>
@@ -62,12 +61,12 @@ export default function DashboardLayout({
                     v1.0
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 font-mono tracking-wide mt-0.5">Enterprise LLM Router</p>
+                <p className="text-[11px] text-slate-400 font-mono tracking-wide">LLM Router Platform</p>
               </div>
             </Link>
           </div>
 
-          {/* Navigation Links */}
+          {/* Navigation Links - Single line, spacious */}
           <nav className="p-4 space-y-1.5">
             <div className="px-3 py-2 text-xs font-mono font-bold text-slate-500 uppercase tracking-widest">
               Navigation Console
@@ -82,32 +81,23 @@ export default function DashboardLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`group relative flex items-center justify-between p-3 rounded-xl transition-all duration-150 ${
+                  className={`group relative flex items-center justify-between px-3.5 py-3 rounded-xl text-sm transition-all duration-150 ${
                     isActive
                       ? 'bg-indigo-600/15 text-white border border-indigo-500/40 shadow-lg shadow-indigo-500/10 font-bold'
-                      : 'text-slate-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
+                      : 'text-slate-400 hover:text-white hover:bg-white/[0.04] border border-transparent font-medium'
                   }`}
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div
-                      className={`p-2 rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-indigo-500 text-white'
-                          : 'bg-white/5 text-slate-400 group-hover:text-white group-hover:bg-white/10'
+                  <div className="flex items-center gap-3">
+                    <item.icon
+                      className={`w-4 h-4 ${
+                        isActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-300'
                       }`}
-                    >
-                      <item.icon className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-sm font-semibold block leading-tight">{item.label}</span>
-                      <span className="text-xs text-slate-400 font-normal block mt-0.5 line-clamp-1">
-                        {item.description}
-                      </span>
-                    </div>
+                    />
+                    <span>{item.label}</span>
                   </div>
 
                   {item.shortcut && (
-                    <span className="text-xs font-mono text-slate-400 group-hover:text-slate-200">
+                    <span className="text-xs font-mono text-slate-500 group-hover:text-slate-300">
                       {item.shortcut}
                     </span>
                   )}
@@ -121,11 +111,11 @@ export default function DashboardLayout({
           </nav>
         </div>
 
-        {/* Dedicated Infrastructure Status Footer Card */}
-        <div className="p-5 border-t border-white/10 bg-[#080910]">
-          <div className="flex items-center justify-between mb-3">
+        {/* System Health Footer */}
+        <div className="p-5 border-t border-white/10 bg-[#080910] space-y-3">
+          <div className="flex items-center justify-between">
             <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              <Activity className="w-4 h-4 text-emerald-400 animate-pulse" /> Providers Health
+              <Activity className="w-4 h-4 text-emerald-400 animate-pulse" /> Infrastructure
             </span>
             <span className="text-xs font-mono font-semibold text-emerald-400 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" /> Healthy
@@ -151,7 +141,7 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* ── Main Workspace Canvas (Level 0 Elevation) ──── */}
+      {/* ── Main Workspace Area (Fills 100% remaining width) ──── */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#07080e]">
         {children}
       </main>

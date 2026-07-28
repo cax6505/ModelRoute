@@ -67,7 +67,7 @@ const BENCHMARK_WORKLOADS = [
     title: 'Entity Extraction',
     task: 'extraction',
     icon: Boxes,
-    prompt: 'Extract all customer emails, order IDs, and total amounts into valid JSON from this log: "User john@example.com created order #ORD-9981 totaling $149.50 on 2026-03-12."',
+    prompt: 'Extract customer emails, order IDs, and totals into valid JSON: "User john@example.com created order #ORD-9981 totaling $149.50 on 2026-03-12."',
   },
   {
     title: 'Technical Translation',
@@ -170,15 +170,15 @@ export default function PlaygroundPage() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#07080e]">
-      {/* Console Header */}
-      <header className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-[#0c0d15] flex-shrink-0">
+    <div className="h-full flex flex-col overflow-hidden bg-[#07080e] w-full">
+      {/* Header */}
+      <header className="h-16 flex items-center justify-between px-8 border-b border-white/10 bg-[#0c0d15] flex-shrink-0">
         <div>
-          <h1 className="text-lg font-extrabold text-white tracking-tight flex items-center gap-2.5">
+          <h1 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2.5">
             <TerminalIcon className="w-5 h-5 text-indigo-400" />
             Playground Studio
           </h1>
-          <p className="text-xs text-slate-400 font-mono mt-0.5">
+          <p className="text-xs text-slate-400 font-mono">
             Evaluate prompt classification, policy execution, and latency tradeoffs across model providers.
           </p>
         </div>
@@ -193,42 +193,42 @@ export default function PlaygroundPage() {
         </div>
       </header>
 
-      {/* Main Split Studio Area */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden p-8 gap-8 max-w-7xl mx-auto w-full">
+      {/* Main Content Area - Full 100% Width */}
+      <div className="flex-1 flex flex-col p-6 space-y-6 overflow-y-auto w-full">
         
-        {/* Left Column: Workload Selector & Prompt Input (5 Cols) */}
-        <div className="lg:col-span-5 flex flex-col justify-between space-y-6 overflow-y-auto pr-1">
-          
-          {/* Preset Cards */}
-          <div className="space-y-3">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" /> Sample Benchmark Workloads
-            </span>
+        {/* Full-width 4-column Workload Grid */}
+        <div className="space-y-2.5">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-400" /> Sample Benchmark Workloads
+          </span>
 
-            <div className="grid grid-cols-2 gap-3">
-              {BENCHMARK_WORKLOADS.map((item) => (
-                <button
-                  key={item.title}
-                  onClick={() => {
-                    setPrompt(item.prompt);
-                    setTaskHint(item.task);
-                  }}
-                  className="p-3.5 rounded-2xl border border-white/10 bg-[#11131f] hover:bg-[#161829] hover:border-indigo-500/50 transition-all duration-200 text-left group"
-                >
-                  <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:text-indigo-300 mb-1">
-                    <item.icon className="w-4 h-4 text-indigo-400" />
-                    <span>{item.title}</span>
-                  </div>
-                  <p className="text-xs text-slate-400 font-mono line-clamp-1">
-                    {item.prompt}
-                  </p>
-                </button>
-              ))}
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            {BENCHMARK_WORKLOADS.map((item) => (
+              <button
+                key={item.title}
+                onClick={() => {
+                  setPrompt(item.prompt);
+                  setTaskHint(item.task);
+                }}
+                className="p-4 rounded-xl border border-white/10 bg-[#11131f] hover:bg-[#161829] hover:border-indigo-500/50 transition-all duration-200 text-left group flex flex-col justify-between"
+              >
+                <div className="flex items-center gap-2.5 text-xs font-bold text-white group-hover:text-indigo-300 mb-1.5">
+                  <item.icon className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                  <span>{item.title}</span>
+                </div>
+                <p className="text-xs text-slate-400 font-mono leading-relaxed line-clamp-2">
+                  {item.prompt}
+                </p>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Main Input Textarea Container */}
-          <div className="space-y-3 flex-1 flex flex-col">
+        {/* 2-Column Split Studio Workspace (50% / 50%) */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 w-full min-h-[500px]">
+          
+          {/* Left Column: Prompt Input & Action Controls */}
+          <div className="flex flex-col space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
                 Input Prompt Definition
@@ -238,10 +238,10 @@ export default function PlaygroundPage() {
 
             <div className="flex-1 flex flex-col rounded-2xl border border-white/10 bg-[#11131f] focus-within:border-indigo-500/60 transition-all overflow-hidden">
               <Textarea
-                placeholder="Type prompt content here to test live model routing..."
+                placeholder="Type prompt content here to evaluate live model routing..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="flex-1 bg-transparent border-0 font-mono text-sm text-slate-100 placeholder:text-slate-500 focus-visible:ring-0 p-5 leading-relaxed resize-none min-h-[220px]"
+                className="flex-1 bg-transparent border-0 font-mono text-sm text-slate-100 placeholder:text-slate-500 focus-visible:ring-0 p-5 leading-relaxed resize-none min-h-[280px]"
                 id="prompt-input"
               />
 
@@ -270,7 +270,7 @@ export default function PlaygroundPage() {
                     </Select>
                   </div>
 
-                  {/* Task Hint Override */}
+                  {/* Classification Override */}
                   <div className="space-y-1">
                     <span className="text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-wider block">Classification Override</span>
                     <Select value={taskHint} onValueChange={(val) => setTaskHint(val ?? '')}>
@@ -291,7 +291,7 @@ export default function PlaygroundPage() {
                   </div>
                 </div>
 
-                {/* Shared DsButton Component */}
+                {/* Execute Button */}
                 <DsButton
                   onClick={handleSubmit}
                   isLoading={isStreaming}
@@ -304,149 +304,133 @@ export default function PlaygroundPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Output Column (7 Cols) */}
-        <div className="lg:col-span-7 flex flex-col space-y-6 overflow-y-auto">
-          
-          {/* Diagnostic Card using DsCard */}
-          {routingDecision ? (
-            <DsCard
-              isHero
-              title={
-                <div className="flex items-center gap-2">
-                  <Cpu className="w-4 h-4 text-indigo-400" />
-                  <span>Policy Execution Resolution & Diagnostics</span>
-                </div>
-              }
-              headerAction={
-                <div className="flex items-center gap-4 font-mono text-xs">
-                  {routingDecision.latencyMs && (
-                    <span className="flex items-center gap-1.5 text-slate-300 font-semibold">
-                      <Clock className="w-3.5 h-3.5 text-amber-400" /> {routingDecision.latencyMs}ms
-                    </span>
-                  )}
-                  {routingDecision.estimatedCostUsd !== undefined && (
-                    <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                      <DollarSign className="w-3.5 h-3.5" /> ${routingDecision.estimatedCostUsd.toFixed(6)}
-                    </span>
-                  )}
-                </div>
-              }
-            >
-              <div className="space-y-4">
-                {/* 4 Metric Badges */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
-                      Classified Intent
-                    </span>
-                    <DsIntentBadge intent={routingDecision.taskType} />
+          {/* Right Column: Execution Output Terminal & Diagnostics */}
+          <div className="flex flex-col space-y-4">
+            
+            {/* Diagnostic Resolution Card */}
+            {routingDecision ? (
+              <DsCard
+                isHero
+                title={
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-4 h-4 text-indigo-400" />
+                    <span>Policy Execution Resolution & Diagnostics</span>
                   </div>
-
-                  <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
-                      Assigned Provider
-                    </span>
-                    <DsProviderBadge provider={routingDecision.provider} />
+                }
+                headerAction={
+                  <div className="flex items-center gap-4 font-mono text-xs">
+                    {routingDecision.latencyMs && (
+                      <span className="flex items-center gap-1.5 text-slate-300 font-semibold">
+                        <Clock className="w-3.5 h-3.5 text-amber-400" /> {routingDecision.latencyMs}ms
+                      </span>
+                    )}
+                    {routingDecision.estimatedCostUsd !== undefined && (
+                      <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                        <DollarSign className="w-3.5 h-3.5" /> ${routingDecision.estimatedCostUsd.toFixed(6)}
+                      </span>
+                    )}
                   </div>
+                }
+              >
+                <div className="space-y-4">
+                  {/* 4 Metric Badges */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
+                        Classified Intent
+                      </span>
+                      <DsIntentBadge intent={routingDecision.taskType} />
+                    </div>
 
-                  <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
-                      Primary Model
-                    </span>
-                    <span className="font-mono text-xs text-white font-bold block truncate">
-                      {routingDecision.model}
-                    </span>
-                  </div>
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
+                        Assigned Provider
+                      </span>
+                      <DsProviderBadge provider={routingDecision.provider} />
+                    </div>
 
-                  <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
-                      Classifier Confidence
-                    </span>
-                    <span className="font-mono text-xs text-emerald-400 font-bold block">
-                      {(routingDecision.classifierConfidence * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                </div>
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
+                        Primary Model
+                      </span>
+                      <span className="font-mono text-xs text-white font-bold block truncate">
+                        {routingDecision.model}
+                      </span>
+                    </div>
 
-                {/* Explanation */}
-                <div className="p-4 rounded-xl bg-[#07080e] border border-white/5">
-                  <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider block mb-1">
-                    Policy Match Explanation
-                  </span>
-                  <p className="text-xs font-mono text-slate-300 leading-relaxed">
-                    {routingDecision.reason}
-                  </p>
-                </div>
-
-                {/* Fallback candidate chain */}
-                {routingDecision.fallbacksConsidered.length > 0 && (
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
-                      Fallback Candidate Chain
-                    </span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {routingDecision.fallbacksConsidered.map((f, i) => (
-                        <div key={i} className="text-xs font-mono px-3 py-1 rounded-lg bg-white/[0.02] border border-white/5 text-slate-300">
-                          <span className="text-slate-100 font-semibold">{f.provider}</span> / {f.model}
-                        </div>
-                      ))}
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
+                        Classifier Confidence
+                      </span>
+                      <span className="font-mono text-xs text-emerald-400 font-bold block">
+                        {(routingDecision.classifierConfidence * 100).toFixed(0)}%
+                      </span>
                     </div>
                   </div>
+
+                  {/* Policy Match Explanation */}
+                  <div className="p-3.5 rounded-xl bg-[#07080e] border border-white/5">
+                    <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider block mb-1">
+                      Policy Resolution Explanation
+                    </span>
+                    <p className="text-xs font-mono text-slate-300 leading-relaxed">
+                      {routingDecision.reason}
+                    </p>
+                  </div>
+                </div>
+              </DsCard>
+            ) : (
+              <DsEmptyState
+                title="No Active Route Execution"
+                description="Select a sample workload preset above or enter a prompt on the left to execute routing diagnostics."
+              />
+            )}
+
+            {/* Output Stream Terminal */}
+            <div className="flex-1 flex flex-col rounded-2xl border border-white/10 bg-[#0c0d15] overflow-hidden min-h-[300px]">
+              <div className="h-10 px-4 bg-[#11131f] border-b border-white/10 flex items-center justify-between flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+                  <span className="text-xs font-mono text-slate-400 ml-2">output_stream.txt</span>
+                </div>
+
+                {response && (
+                  <DsButton variant="ghost" size="sm" onClick={handleCopy}>
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
+                    {copied ? 'Copied Output' : 'Copy Output'}
+                  </DsButton>
                 )}
               </div>
-            </DsCard>
-          ) : (
-            <DsEmptyState
-              title="No Execution Active"
-              description="Select a sample workload preset on the left or enter a custom prompt to execute routing diagnostics."
-            />
-          )}
 
-          {/* Response Terminal */}
-          <div className="flex-1 flex flex-col rounded-2xl border border-white/10 bg-[#0c0d15] overflow-hidden min-h-[360px]">
-            <div className="h-11 px-5 bg-[#11131f] border-b border-white/10 flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500/70" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
-                <div className="w-3 h-3 rounded-full bg-green-500/70" />
-                <span className="text-xs font-mono text-slate-400 ml-3">output_stream.txt</span>
+              <div className="flex-1 p-5 font-mono text-sm text-slate-100 overflow-y-auto leading-relaxed whitespace-pre-wrap select-text">
+                {response ? (
+                  <>
+                    {response}
+                    {isStreaming && <span className="inline-block w-2 h-4 bg-indigo-400 ml-1 animate-pulse" />}
+                  </>
+                ) : isStreaming ? (
+                  <div className="flex items-center gap-3 text-indigo-400 font-mono text-xs">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Streaming content from assigned provider endpoint...</span>
+                  </div>
+                ) : (
+                  <span className="text-slate-500 font-mono italic text-xs">
+                    // Streamed response output will display here in real time...
+                  </span>
+                )}
               </div>
-
-              {response && (
-                <DsButton variant="ghost" size="sm" onClick={handleCopy}>
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
-                  {copied ? 'Copied Output' : 'Copy Output'}
-                </DsButton>
-              )}
             </div>
 
-            <div className="flex-1 p-6 font-mono text-sm text-slate-100 overflow-y-auto leading-relaxed whitespace-pre-wrap select-text">
-              {response ? (
-                <>
-                  {response}
-                  {isStreaming && <span className="inline-block w-2 h-4 bg-indigo-400 ml-1 animate-pulse" />}
-                </>
-              ) : isStreaming ? (
-                <div className="flex items-center gap-3 text-indigo-400 font-mono text-xs">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Streaming model output from designated provider endpoint...</span>
-                </div>
-              ) : (
-                <span className="text-slate-500 font-mono italic text-xs">
-                  // Streamed output from the assigned model will render here in real time...
-                </span>
-              )}
-            </div>
+            {/* Error */}
+            {error && (
+              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-xs font-mono text-red-400">
+                {error}
+              </div>
+            )}
           </div>
-
-          {/* Error */}
-          {error && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-xs font-mono text-red-400">
-              {error}
-            </div>
-          )}
         </div>
       </div>
     </div>
