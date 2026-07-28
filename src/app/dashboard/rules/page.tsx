@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TASK_TYPES, PRIORITY_MODES } from '@/lib/core/types';
-import { ArrowUp, ArrowDown, RotateCcw, Save, Sparkles, Sliders } from 'lucide-react';
+import { ArrowUp, ArrowDown, RotateCcw, Save, Sparkles, Sliders, GripVertical } from 'lucide-react';
+import { DsButton, DsProviderBadge, DsCard } from '@/components/design-system';
 
 interface Candidate {
   provider: 'groq' | 'gemini' | 'ollama';
@@ -40,12 +39,6 @@ const INITIAL_RULES: PolicyRule[] = [
     ],
   },
 ];
-
-const PROVIDER_COLORS: Record<string, string> = {
-  groq: 'provider-badge-groq',
-  gemini: 'provider-badge-gemini',
-  ollama: 'provider-badge-ollama',
-};
 
 export default function RulesEditorPage() {
   const [rules, setRules] = useState<PolicyRule[]>(INITIAL_RULES);
@@ -108,39 +101,40 @@ export default function RulesEditorPage() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#05060a]">
-      <header className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-[#080912]/80 backdrop-blur-xl flex-shrink-0">
+    <div className="h-full flex flex-col overflow-hidden bg-[#07080e]">
+      {/* Console Header */}
+      <header className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-[#0c0d15] flex-shrink-0">
         <div>
           <h1 className="text-lg font-extrabold text-white tracking-tight flex items-center gap-2.5">
             <Sliders className="w-5 h-5 text-indigo-400" />
-            Routing Engine Policy Editor
+            Routing Engine Policy Manager
           </h1>
-          <p className="text-xs text-zinc-400 font-mono mt-0.5">
-            Configure candidate ordering and fallback weights for task types and priority policies.
+          <p className="text-xs text-slate-400 font-mono mt-0.5">
+            Configure candidate priority ranking, fallback ordering, and candidate weight allocations.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => setRules(INITIAL_RULES)} className="h-9 px-4 text-xs font-semibold border-white/10 text-zinc-300">
-            <RotateCcw className="w-3.5 h-3.5 mr-2" /> Reset Defaults
-          </Button>
-          <Button size="sm" onClick={handleSave} className="h-9 px-5 text-xs font-bold bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25">
-            <Save className="w-3.5 h-3.5 mr-2" /> {isSaved ? 'Policy Saved!' : 'Save Policy Changes'}
-          </Button>
+          <DsButton variant="secondary" size="sm" onClick={() => setRules(INITIAL_RULES)} icon={<RotateCcw className="w-3.5 h-3.5" />}>
+            Reset Defaults
+          </DsButton>
+          <DsButton variant="primary" size="sm" onClick={handleSave} icon={<Save className="w-3.5 h-3.5" />}>
+            {isSaved ? 'Policy Saved!' : 'Save Policy Changes'}
+          </DsButton>
         </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-8 space-y-6 max-w-5xl mx-auto w-full">
-        {/* Selectors */}
-        <Card className="card-glass">
-          <CardContent className="p-6 flex flex-wrap items-center gap-6">
+        {/* Task & Priority Selectors */}
+        <DsCard>
+          <div className="flex flex-wrap items-center gap-6">
             <div className="space-y-1.5">
-              <label className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider block">Task Type Intent</label>
+              <label className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider block">Task Type Intent</label>
               <Select value={selectedTask} onValueChange={(val) => val && setSelectedTask(val)}>
-                <SelectTrigger className="w-[200px] h-10 text-xs bg-white/5 border-white/10 text-zinc-200">
+                <SelectTrigger className="w-[200px] h-10 text-xs bg-white/5 border-white/10 text-slate-200">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#11121d] border-white/10 text-zinc-200">
+                <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
                   {TASK_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>
                       {t}
@@ -151,12 +145,12 @@ export default function RulesEditorPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider block">Priority Mode Policy</label>
+              <label className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider block">Priority Mode Policy</label>
               <Select value={selectedPriority} onValueChange={(val) => val && setSelectedPriority(val)}>
-                <SelectTrigger className="w-[160px] h-10 text-xs bg-white/5 border-white/10 text-zinc-200">
+                <SelectTrigger className="w-[160px] h-10 text-xs bg-white/5 border-white/10 text-slate-200">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#11121d] border-white/10 text-zinc-200">
+                <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
                   {PRIORITY_MODES.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
@@ -165,77 +159,83 @@ export default function RulesEditorPage() {
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </DsCard>
 
-        {/* Priority Candidates Chain */}
-        <Card className="card-glass">
-          <CardHeader className="p-6 pb-4 border-b border-white/10">
-            <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
+        {/* Priority Ranked Candidate List */}
+        <DsCard
+          title={
+            <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-indigo-400" />
-              Candidate Priority Order for <span className="font-mono text-indigo-400">{selectedTask}</span> ({selectedPriority})
-            </CardTitle>
-            <CardDescription className="text-xs text-zinc-400">
-              Drag or re-order candidate models below. The router evaluates top-ranked candidates first and automatically fails over if rate limits or errors occur.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
+              <span>Candidate Priority Order for <span className="font-mono text-indigo-400">{selectedTask}</span> ({selectedPriority})</span>
+            </div>
+          }
+          subtitle="Re-order candidates below. Top-ranked candidates receive highest evaluation weight during routing."
+        >
+          <div className="space-y-4">
             {activeRule.candidates.map((candidate, idx) => (
               <div
                 key={`${candidate.provider}-${candidate.model}`}
-                className="flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+                  idx === 0
+                    ? 'border-indigo-500/40 bg-gradient-to-r from-indigo-950/20 via-[#11131f] to-purple-950/20 shadow-lg shadow-indigo-500/10'
+                    : 'border-white/10 bg-white/[0.02]'
+                }`}
               >
                 <div className="flex items-center gap-4">
-                  <span className="w-7 h-7 rounded-lg bg-white/5 text-zinc-300 font-mono text-xs flex items-center justify-center font-bold">
+                  <GripVertical className="w-4 h-4 text-slate-500 cursor-grab" />
+                  <span className="w-8 h-8 rounded-lg bg-white/5 text-slate-300 font-mono text-xs flex items-center justify-center font-bold border border-white/5">
                     #{idx + 1}
                   </span>
-                  <Badge className={`text-xs font-mono ${PROVIDER_COLORS[candidate.provider]}`}>
-                    {candidate.provider}
-                  </Badge>
-                  <span className="font-mono text-sm font-semibold text-white">{candidate.model}</span>
+                  <DsProviderBadge provider={candidate.provider} />
+                  <span className="font-mono text-sm font-bold text-white">{candidate.model}</span>
                 </div>
 
                 <div className="flex items-center gap-6">
-                  <span className="text-xs font-mono text-zinc-400 font-semibold">
-                    Candidate Weight: {candidate.weight}
-                  </span>
+                  {/* Visual Weight Bar */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-slate-400">
+                      Weight: {candidate.weight}
+                    </span>
+                    <div className="w-24 h-2 rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                        style={{ width: `${(candidate.weight / 10) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-1.5">
-                    <Button
+                    <DsButton
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
+                      size="sm"
                       disabled={idx === 0}
                       onClick={() => moveCandidate(idx, 'up')}
-                    >
-                      <ArrowUp className="w-4 h-4 text-zinc-300" />
-                    </Button>
-                    <Button
+                      icon={<ArrowUp className="w-4 h-4" />}
+                    />
+                    <DsButton
                       variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
+                      size="sm"
                       disabled={idx === activeRule.candidates.length - 1}
                       onClick={() => moveCandidate(idx, 'down')}
-                    >
-                      <ArrowDown className="w-4 h-4 text-zinc-300" />
-                    </Button>
+                      icon={<ArrowDown className="w-4 h-4" />}
+                    />
                   </div>
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </DsCard>
 
-        {/* Live Simulation */}
-        <Card className="card-glass border-indigo-500/20 bg-indigo-950/10">
-          <CardContent className="p-6">
-            <span className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-wider block mb-2">
-              Policy Explanation Preview
-            </span>
-            <p className="text-xs font-mono text-zinc-300 leading-relaxed">
-              &quot;task_type={selectedTask}, priority={selectedPriority}, top_candidate={activeRule.candidates[0]?.provider}/{activeRule.candidates[0]?.model}, reason=highest weight ({activeRule.candidates[0]?.weight}) for {selectedPriority} {selectedTask}&quot;
-            </p>
-          </CardContent>
-        </Card>
+        {/* Code Terminal Output for Policy Resolution */}
+        <div className="rounded-2xl border border-white/10 bg-[#07080e] overflow-hidden">
+          <div className="px-5 py-3 bg-[#0c0d15] border-b border-white/10 text-xs font-mono text-indigo-400 font-bold uppercase tracking-wider">
+            Policy Resolution Output Preview
+          </div>
+          <div className="p-5 font-mono text-xs text-slate-300 leading-relaxed">
+            &quot;task_type={selectedTask}, priority={selectedPriority}, top_candidate={activeRule.candidates[0]?.provider}/{activeRule.candidates[0]?.model}, reason=highest weight ({activeRule.candidates[0]?.weight}) for {selectedPriority} {selectedTask}&quot;
+          </div>
+        </div>
       </div>
     </div>
   );

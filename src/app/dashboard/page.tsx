@@ -1,9 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useState, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -12,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Send,
   Zap,
@@ -19,7 +17,6 @@ import {
   DollarSign,
   Clock,
   Sparkles,
-  Loader2,
   Copy,
   Check,
   Code2,
@@ -29,9 +26,15 @@ import {
   ShieldCheck,
   Terminal as TerminalIcon,
   Cpu,
-  ArrowRight,
-  Layers,
+  Loader2,
 } from 'lucide-react';
+import {
+  DsButton,
+  DsProviderBadge,
+  DsIntentBadge,
+  DsCard,
+  DsEmptyState,
+} from '@/components/design-system';
 
 interface RoutingDecision {
   taskType: string;
@@ -53,47 +56,26 @@ const BENCHMARK_WORKLOADS = [
     task: 'code_generation',
     icon: Code2,
     prompt: 'Write an optimized Python function to check if a number is prime. Include type hints and time complexity analysis.',
-    color: 'from-purple-500/20 to-indigo-500/20 text-purple-300 border-purple-500/30',
   },
   {
     title: 'Technical Summarization',
     task: 'summarization',
     icon: FileText,
     prompt: 'Summarize the core architectural differences between REST APIs and GraphQL in 3 concise bullet points.',
-    color: 'from-sky-500/20 to-blue-500/20 text-sky-300 border-sky-500/30',
   },
   {
     title: 'Entity Extraction',
     task: 'extraction',
     icon: Boxes,
     prompt: 'Extract all customer emails, order IDs, and total amounts into valid JSON from this log: "User john@example.com created order #ORD-9981 totaling $149.50 on 2026-03-12."',
-    color: 'from-pink-500/20 to-rose-500/20 text-pink-300 border-pink-500/30',
   },
   {
     title: 'Technical Translation',
     task: 'translation',
     icon: Languages,
     prompt: 'Translate this notification into French: "Your API key quota is operating at 80% capacity. Upgrade to prevent interruption."',
-    color: 'from-amber-500/20 to-orange-500/20 text-amber-300 border-amber-500/30',
   },
 ];
-
-const PROVIDER_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  groq: { bg: 'bg-orange-500/15', text: 'text-orange-300', border: 'border-orange-500/40' },
-  gemini: { bg: 'bg-blue-500/15', text: 'text-blue-300', border: 'border-blue-500/40' },
-  ollama: { bg: 'bg-emerald-500/15', text: 'text-emerald-300', border: 'border-emerald-500/40' },
-};
-
-const TASK_BADGE_STYLES: Record<string, string> = {
-  code_generation: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
-  summarization: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
-  extraction: 'bg-pink-500/15 text-pink-300 border-pink-500/30',
-  creative_writing: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-  reasoning: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  simple_qa: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
-  translation: 'bg-orange-500/15 text-orange-300 border-orange-500/30',
-  general: 'bg-zinc-500/15 text-zinc-300 border-zinc-500/30',
-};
 
 export default function PlaygroundPage() {
   const [prompt, setPrompt] = useState('');
@@ -188,16 +170,16 @@ export default function PlaygroundPage() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#05060a]">
-      {/* Console Top Bar */}
-      <header className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-[#080912]/80 backdrop-blur-xl flex-shrink-0">
+    <div className="h-full flex flex-col overflow-hidden bg-[#07080e]">
+      {/* Console Header */}
+      <header className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-[#0c0d15] flex-shrink-0">
         <div>
           <h1 className="text-lg font-extrabold text-white tracking-tight flex items-center gap-2.5">
             <TerminalIcon className="w-5 h-5 text-indigo-400" />
             Playground Studio
           </h1>
-          <p className="text-xs text-zinc-400 font-mono mt-0.5">
-            Evaluate prompt classification, policy execution, and latency tradeoffs across providers.
+          <p className="text-xs text-slate-400 font-mono mt-0.5">
+            Evaluate prompt classification, policy execution, and latency tradeoffs across model providers.
           </p>
         </div>
 
@@ -211,19 +193,17 @@ export default function PlaygroundPage() {
         </div>
       </header>
 
-      {/* Main Studio Viewport */}
+      {/* Main Split Studio Area */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden p-8 gap-8 max-w-7xl mx-auto w-full">
         
         {/* Left Column: Workload Selector & Prompt Input (5 Cols) */}
         <div className="lg:col-span-5 flex flex-col justify-between space-y-6 overflow-y-auto pr-1">
           
-          {/* Benchmark Workload Chips */}
+          {/* Preset Cards */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-400" /> Sample Workload Presets
-              </span>
-            </div>
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" /> Sample Benchmark Workloads
+            </span>
 
             <div className="grid grid-cols-2 gap-3">
               {BENCHMARK_WORKLOADS.map((item) => (
@@ -233,13 +213,13 @@ export default function PlaygroundPage() {
                     setPrompt(item.prompt);
                     setTaskHint(item.task);
                   }}
-                  className="p-3.5 rounded-xl border border-white/10 bg-[#0e101c] hover:bg-[#141727] hover:border-indigo-500/50 transition-all duration-200 text-left group"
+                  className="p-3.5 rounded-2xl border border-white/10 bg-[#11131f] hover:bg-[#161829] hover:border-indigo-500/50 transition-all duration-200 text-left group"
                 >
                   <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:text-indigo-300 mb-1">
                     <item.icon className="w-4 h-4 text-indigo-400" />
                     <span>{item.title}</span>
                   </div>
-                  <p className="text-xs text-zinc-400 font-mono line-clamp-1">
+                  <p className="text-xs text-slate-400 font-mono line-clamp-1">
                     {item.prompt}
                   </p>
                 </button>
@@ -247,36 +227,36 @@ export default function PlaygroundPage() {
             </div>
           </div>
 
-          {/* Main Input Textarea */}
+          {/* Main Input Textarea Container */}
           <div className="space-y-3 flex-1 flex flex-col">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
+              <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
                 Input Prompt Definition
               </label>
-              <span className="text-xs font-mono text-zinc-400">{prompt.length} chars</span>
+              <span className="text-xs font-mono text-slate-400">{prompt.length} chars</span>
             </div>
 
-            <div className="flex-1 flex flex-col rounded-xl border border-white/10 bg-[#0e101c] focus-within:border-indigo-500/60 focus-within:ring-1 focus-within:ring-indigo-500/30 transition-all overflow-hidden">
+            <div className="flex-1 flex flex-col rounded-2xl border border-white/10 bg-[#11131f] focus-within:border-indigo-500/60 transition-all overflow-hidden">
               <Textarea
-                placeholder="Type any prompt content here to test live model routing..."
+                placeholder="Type prompt content here to test live model routing..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="flex-1 bg-transparent border-0 font-mono text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-0 p-5 leading-relaxed resize-none min-h-[220px]"
+                className="flex-1 bg-transparent border-0 font-mono text-sm text-slate-100 placeholder:text-slate-500 focus-visible:ring-0 p-5 leading-relaxed resize-none min-h-[220px]"
                 id="prompt-input"
               />
 
-              {/* Bottom Controls */}
-              <div className="p-4 border-t border-white/10 bg-[#090a12] flex flex-wrap items-center justify-between gap-4">
+              {/* Controls Bar */}
+              <div className="p-4 border-t border-white/10 bg-[#0c0d15] flex flex-wrap items-center justify-between gap-4">
                 
                 <div className="flex items-center gap-3">
-                  {/* Priority Mode */}
+                  {/* Priority Selector */}
                   <div className="space-y-1">
-                    <span className="text-[10px] font-mono font-semibold text-zinc-400 uppercase tracking-wider block">Priority Policy</span>
+                    <span className="text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-wider block">Priority Policy</span>
                     <Select value={priority} onValueChange={(val) => val && setPriority(val)}>
-                      <SelectTrigger className="w-[145px] h-9 text-xs bg-white/5 border-white/10 text-zinc-200" id="priority-select">
+                      <SelectTrigger className="w-[145px] h-9 text-xs bg-white/5 border-white/10 text-slate-200" id="priority-select">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0e101c] border-white/10 text-zinc-200">
+                      <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
                         <SelectItem value="quality">
                           <span className="flex items-center gap-2"><Brain className="w-3.5 h-3.5 text-purple-400" /> Quality</span>
                         </SelectItem>
@@ -292,12 +272,12 @@ export default function PlaygroundPage() {
 
                   {/* Task Hint Override */}
                   <div className="space-y-1">
-                    <span className="text-[10px] font-mono font-semibold text-zinc-400 uppercase tracking-wider block">Classification Override</span>
+                    <span className="text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-wider block">Classification Override</span>
                     <Select value={taskHint} onValueChange={(val) => setTaskHint(val ?? '')}>
-                      <SelectTrigger className="w-[155px] h-9 text-xs bg-white/5 border-white/10 text-zinc-200" id="task-hint-select">
+                      <SelectTrigger className="w-[155px] h-9 text-xs bg-white/5 border-white/10 text-slate-200" id="task-hint-select">
                         <SelectValue placeholder="Auto-Classify" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0e101c] border-white/10 text-zinc-200">
+                      <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
                         <SelectItem value="auto">Auto-Classify</SelectItem>
                         <SelectItem value="code_generation">Code Generation</SelectItem>
                         <SelectItem value="summarization">Summarization</SelectItem>
@@ -311,25 +291,16 @@ export default function PlaygroundPage() {
                   </div>
                 </div>
 
-                {/* Submit Action */}
-                <Button
+                {/* Shared DsButton Component */}
+                <DsButton
                   onClick={handleSubmit}
-                  disabled={!prompt.trim() || isStreaming}
-                  className="h-10 px-6 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-500/25 transition-all"
+                  isLoading={isStreaming}
+                  disabled={!prompt.trim()}
+                  icon={<Send className="w-4 h-4" />}
                   id="submit-btn"
                 >
-                  {isStreaming ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Executing...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Execute Route
-                    </>
-                  )}
-                </Button>
+                  Execute Route
+                </DsButton>
               </div>
             </div>
           </div>
@@ -338,20 +309,20 @@ export default function PlaygroundPage() {
         {/* Right Output Column (7 Cols) */}
         <div className="lg:col-span-7 flex flex-col space-y-6 overflow-y-auto">
           
-          {/* Routing Decision Diagnostics */}
+          {/* Diagnostic Card using DsCard */}
           {routingDecision ? (
-            <Card className="card-glass border-indigo-500/30">
-              <CardHeader className="pb-3 pt-4 px-6 border-b border-white/10 flex flex-row items-center justify-between">
-                <div className="flex items-center gap-2.5">
+            <DsCard
+              isHero
+              title={
+                <div className="flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-indigo-400" />
-                  <CardTitle className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300">
-                    Policy Execution Resolution & Diagnostics
-                  </CardTitle>
+                  <span>Policy Execution Resolution & Diagnostics</span>
                 </div>
-
+              }
+              headerAction={
                 <div className="flex items-center gap-4 font-mono text-xs">
                   {routingDecision.latencyMs && (
-                    <span className="flex items-center gap-1.5 text-zinc-300 font-semibold">
+                    <span className="flex items-center gap-1.5 text-slate-300 font-semibold">
                       <Clock className="w-3.5 h-3.5 text-amber-400" /> {routingDecision.latencyMs}ms
                     </span>
                   )}
@@ -361,31 +332,27 @@ export default function PlaygroundPage() {
                     </span>
                   )}
                 </div>
-              </CardHeader>
-
-              <CardContent className="p-6 space-y-4">
+              }
+            >
+              <div className="space-y-4">
                 {/* 4 Metric Badges */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block mb-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
                       Classified Intent
                     </span>
-                    <Badge className={`text-xs font-mono border ${TASK_BADGE_STYLES[routingDecision.taskType] ?? TASK_BADGE_STYLES.general}`}>
-                      {routingDecision.taskType}
-                    </Badge>
+                    <DsIntentBadge intent={routingDecision.taskType} />
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block mb-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
                       Assigned Provider
                     </span>
-                    <Badge className={`text-xs font-mono ${PROVIDER_COLORS[routingDecision.provider]?.bg ?? ''} ${PROVIDER_COLORS[routingDecision.provider]?.text ?? ''} ${PROVIDER_COLORS[routingDecision.provider]?.border ?? ''}`}>
-                      {routingDecision.provider}
-                    </Badge>
+                    <DsProviderBadge provider={routingDecision.provider} />
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block mb-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
                       Primary Model
                     </span>
                     <span className="font-mono text-xs text-white font-bold block truncate">
@@ -394,7 +361,7 @@ export default function PlaygroundPage() {
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block mb-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
                       Classifier Confidence
                     </span>
                     <span className="font-mono text-xs text-emerald-400 font-bold block">
@@ -404,74 +371,71 @@ export default function PlaygroundPage() {
                 </div>
 
                 {/* Explanation */}
-                <div className="p-4 rounded-xl bg-[#080912] border border-white/5">
+                <div className="p-4 rounded-xl bg-[#07080e] border border-white/5">
                   <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider block mb-1">
                     Policy Match Explanation
                   </span>
-                  <p className="text-xs font-mono text-zinc-300 leading-relaxed">
+                  <p className="text-xs font-mono text-slate-300 leading-relaxed">
                     {routingDecision.reason}
                   </p>
                 </div>
 
-                {/* Fallback candidates */}
+                {/* Fallback candidate chain */}
                 {routingDecision.fallbacksConsidered.length > 0 && (
                   <div className="space-y-2">
-                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
                       Fallback Candidate Chain
                     </span>
                     <div className="flex flex-wrap items-center gap-2">
                       {routingDecision.fallbacksConsidered.map((f, i) => (
-                        <div key={i} className="text-xs font-mono px-3 py-1 rounded-lg bg-white/[0.02] border border-white/5 text-zinc-300">
-                          <span className="text-zinc-100 font-semibold">{f.provider}</span> / {f.model}
+                        <div key={i} className="text-xs font-mono px-3 py-1 rounded-lg bg-white/[0.02] border border-white/5 text-slate-300">
+                          <span className="text-slate-100 font-semibold">{f.provider}</span> / {f.model}
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </DsCard>
           ) : (
-            <div className="p-10 rounded-2xl border border-dashed border-white/10 bg-white/[0.01] text-center space-y-2">
-              <Sparkles className="w-8 h-8 text-indigo-400/40 mx-auto" />
-              <p className="text-sm font-semibold text-zinc-300">No Execution Active</p>
-              <p className="text-xs text-zinc-500 font-mono">
-                Select a benchmark workload preset or enter a custom prompt to execute routing diagnostics.
-              </p>
-            </div>
+            <DsEmptyState
+              title="No Execution Active"
+              description="Select a sample workload preset on the left or enter a custom prompt to execute routing diagnostics."
+            />
           )}
 
           {/* Response Terminal */}
-          <div className="flex-1 flex flex-col rounded-2xl border border-white/10 bg-[#0b0c16] overflow-hidden min-h-[360px]">
-            <div className="h-11 px-5 bg-[#0f111f] border-b border-white/10 flex items-center justify-between flex-shrink-0">
+          <div className="flex-1 flex flex-col rounded-2xl border border-white/10 bg-[#0c0d15] overflow-hidden min-h-[360px]">
+            <div className="h-11 px-5 bg-[#11131f] border-b border-white/10 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-red-500/70" />
                 <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
                 <div className="w-3 h-3 rounded-full bg-green-500/70" />
-                <span className="text-xs font-mono text-zinc-400 ml-3">output_stream.txt</span>
+                <span className="text-xs font-mono text-slate-400 ml-3">output_stream.txt</span>
               </div>
 
               {response && (
-                <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 px-3 text-xs font-mono text-zinc-300 hover:text-white">
+                <DsButton variant="ghost" size="sm" onClick={handleCopy}>
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
-                  {copied ? 'Copied Output' : 'Copy Response'}
-                </Button>
+                  {copied ? 'Copied Output' : 'Copy Output'}
+                </DsButton>
               )}
             </div>
 
-            <div className="flex-1 p-6 font-mono text-sm text-zinc-100 overflow-y-auto leading-relaxed whitespace-pre-wrap select-text">
+            <div className="flex-1 p-6 font-mono text-sm text-slate-100 overflow-y-auto leading-relaxed whitespace-pre-wrap select-text">
               {response ? (
                 <>
                   {response}
-                  {isStreaming && <span className="inline-block w-2 h-4 bg-indigo-400 ml-1 pulse-subtle" />}
+                  {isStreaming && <span className="inline-block w-2 h-4 bg-indigo-400 ml-1 animate-pulse" />}
                 </>
               ) : isStreaming ? (
                 <div className="flex items-center gap-3 text-indigo-400 font-mono text-xs">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Streaming response content from designated provider...</span>
+                  <span>Streaming model output from designated provider endpoint...</span>
                 </div>
               ) : (
-                <span className="text-zinc-500 font-mono italic text-xs">
-                  // Streamed model response output will display here in real time...
+                <span className="text-slate-500 font-mono italic text-xs">
+                  // Streamed output from the assigned model will render here in real time...
                 </span>
               )}
             </div>

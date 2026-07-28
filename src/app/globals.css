@@ -9,35 +9,51 @@
 }
 
 :root {
-  /* Midnight Sapphire & Indigo Design Token System */
-  --background: #05060a;
-  --surface-1: #090a12;
-  --surface-2: #0e101c;
-  --surface-3: #141727;
-  --surface-hover: #1a1e33;
+  /* ── Level 0-3 Depth Elevation System ── */
+  --bg-canvas: #07080e;        /* Level 0: Main app background */
+  --bg-sidebar: #0c0d15;       /* Level 1: Sidebar & Header */
+  --bg-surface: #11131f;       /* Level 2: Cards, Panels, Rows */
+  --bg-surface-hover: #161829; /* Level 2 Hover */
+  --bg-elevated: #1a1c2e;      /* Level 3: Dropdowns, Modals, Popovers */
 
   --foreground: #f8fafc;
   --foreground-muted: #94a3b8;
   --foreground-subtle: #64748b;
 
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-active: rgba(99, 102, 241, 0.4);
-  --border-accent: rgba(139, 92, 246, 0.3);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(99, 102, 241, 0.35);
+  --border-accent: rgba(139, 92, 246, 0.4);
 
-  --accent-violet: #8b5cf6;
-  --accent-indigo: #6366f1;
-  --accent-cyan: #06b6d4;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-rose: #f43f5e;
+  /* Provider Colors - Used systematically across the entire app */
+  --provider-groq-bg: rgba(249, 115, 22, 0.12);
+  --provider-groq-text: #fb923c;
+  --provider-groq-border: rgba(249, 115, 22, 0.35);
 
-  --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
-  --gradient-card: linear-gradient(180deg, rgba(14, 16, 28, 0.8) 0%, rgba(9, 10, 18, 0.9) 100%);
-  --gradient-glow: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  --provider-gemini-bg: rgba(59, 130, 246, 0.12);
+  --provider-gemini-text: #60a5fa;
+  --provider-gemini-border: rgba(59, 130, 246, 0.35);
 
-  --radius-xl: 16px;
-  --radius-lg: 12px;
-  --radius-md: 8px;
+  --provider-ollama-bg: rgba(16, 185, 129, 0.12);
+  --provider-ollama-text: #34d399;
+  --provider-ollama-border: rgba(16, 185, 129, 0.35);
+
+  /* Primary Action Color - Reserved specifically for actions/active state */
+  --action-primary: #6366f1;
+  --action-primary-hover: #4f46e5;
+  --action-primary-glow: rgba(99, 102, 241, 0.25);
+
+  /* Status Colors */
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-success-text: #34d399;
+  --status-success-border: rgba(16, 185, 129, 0.3);
+
+  --status-fallback-bg: rgba(245, 158, 11, 0.12);
+  --status-fallback-text: #fbbf24;
+  --status-fallback-border: rgba(245, 158, 11, 0.3);
+
+  --status-error-bg: rgba(239, 68, 68, 0.12);
+  --status-error-text: #f87171;
+  --status-error-border: rgba(239, 68, 68, 0.3);
 }
 
 * {
@@ -47,94 +63,42 @@
 }
 
 body {
-  background: var(--background);
+  background: var(--bg-canvas);
   color: var(--foreground);
   font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-image: var(--gradient-glow);
 }
 
-/* Background Texture Mesh */
-.bg-mesh-pattern {
+/* Background Texture Pattern */
+.bg-canvas-pattern {
   background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
     linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
-}
-
-/* Glassmorphism Card System */
-.card-glass {
-  background: var(--gradient-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.card-glass:hover {
-  border-color: var(--border-active);
-  box-shadow: 0 0 30px rgba(99, 102, 241, 0.15), 0 20px 40px -15px rgba(0, 0, 0, 0.8);
-}
-
-/* Typography Overrides */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-code, pre, .font-mono {
-  font-family: var(--font-mono);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Provider Badges */
-.provider-badge-groq {
-  background: rgba(249, 115, 22, 0.15);
-  color: #fb923c;
-  border: 1px solid rgba(249, 115, 22, 0.35);
-}
-
-.provider-badge-gemini {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.35);
-}
-
-.provider-badge-ollama {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.35);
-}
-
-/* Glowing Animations */
-@keyframes pulseGlow {
-  0%, 100% { opacity: 0.4; filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.4)); }
-  50% { opacity: 1; filter: drop-shadow(0 0 16px rgba(99, 102, 241, 0.8)); }
-}
-
-.glow-animation {
-  animation: pulseGlow 2.5s infinite ease-in-out;
+/* Monospace fonts for data/code */
+code, pre, .font-mono {
+  font-family: var(--font-mono);
 }

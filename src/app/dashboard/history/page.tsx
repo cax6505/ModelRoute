@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from 'react';
 import {
   Select,
   SelectContent,
@@ -11,6 +9,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Filter, History as HistoryIcon } from 'lucide-react';
+import {
+  DsProviderBadge,
+  DsStatusBadge,
+  DsIntentBadge,
+} from '@/components/design-system';
 
 interface RequestLog {
   id: string;
@@ -28,29 +31,6 @@ interface RequestLog {
   prompt_length: number;
   correlation_id: string;
 }
-
-const PROVIDER_STYLES: Record<string, string> = {
-  groq: 'provider-badge-groq',
-  gemini: 'provider-badge-gemini',
-  ollama: 'provider-badge-ollama',
-};
-
-const STATUS_STYLES: Record<string, string> = {
-  success: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  error: 'bg-red-500/15 text-red-300 border-red-500/30',
-  fallback: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-};
-
-const TASK_TYPE_COLORS: Record<string, string> = {
-  code_generation: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
-  summarization: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
-  extraction: 'bg-pink-500/15 text-pink-300 border-pink-500/30',
-  creative_writing: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-  reasoning: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  simple_qa: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
-  translation: 'bg-orange-500/15 text-orange-300 border-orange-500/30',
-  general: 'bg-zinc-500/15 text-zinc-300 border-zinc-500/30',
-};
 
 const DEMO_LOGS: RequestLog[] = [
   {
@@ -105,26 +85,26 @@ export default function HistoryPage() {
   });
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#090a10]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#07080e]">
       {/* Console Header */}
-      <header className="h-16 flex items-center justify-between px-8 border-b border-white/10 bg-[#0d0e17] flex-shrink-0">
+      <header className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-[#0c0d15] flex-shrink-0">
         <div>
-          <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-            <HistoryIcon className="w-4 h-4 text-indigo-400" />
-            Request Logs & Audit Trail
+          <h1 className="text-lg font-extrabold text-white tracking-tight flex items-center gap-2.5">
+            <HistoryIcon className="w-5 h-5 text-indigo-400" />
+            Request Audit Logs
           </h1>
-          <p className="text-xs text-zinc-400 font-mono">
+          <p className="text-xs text-slate-400 font-mono mt-0.5">
             Inspect request metadata, classification tags, latency distributions, and policy resolution reasons.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Filter className="w-4 h-4 text-zinc-400" />
+          <Filter className="w-4 h-4 text-slate-400" />
           <Select value={filterTask} onValueChange={(val) => setFilterTask(val ?? 'all')}>
-            <SelectTrigger className="w-[150px] h-9 text-xs bg-white/5 border-white/10 text-zinc-200">
+            <SelectTrigger className="w-[155px] h-9 text-xs bg-white/5 border-white/10 text-slate-200">
               <SelectValue placeholder="Task Intent" />
             </SelectTrigger>
-            <SelectContent className="bg-[#11121d] border-white/10 text-zinc-200">
+            <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
               <SelectItem value="all">All Intent Types</SelectItem>
               <SelectItem value="code_generation">Code Generation</SelectItem>
               <SelectItem value="summarization">Summarization</SelectItem>
@@ -137,10 +117,10 @@ export default function HistoryPage() {
           </Select>
 
           <Select value={filterProvider} onValueChange={(val) => setFilterProvider(val ?? 'all')}>
-            <SelectTrigger className="w-[140px] h-9 text-xs bg-white/5 border-white/10 text-zinc-200">
+            <SelectTrigger className="w-[140px] h-9 text-xs bg-white/5 border-white/10 text-slate-200">
               <SelectValue placeholder="Provider" />
             </SelectTrigger>
-            <SelectContent className="bg-[#11121d] border-white/10 text-zinc-200">
+            <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
               <SelectItem value="all">All Providers</SelectItem>
               <SelectItem value="groq">Groq</SelectItem>
               <SelectItem value="gemini">Gemini</SelectItem>
@@ -149,10 +129,10 @@ export default function HistoryPage() {
           </Select>
 
           <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val ?? 'all')}>
-            <SelectTrigger className="w-[130px] h-9 text-xs bg-white/5 border-white/10 text-zinc-200">
+            <SelectTrigger className="w-[130px] h-9 text-xs bg-white/5 border-white/10 text-slate-200">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-[#11121d] border-white/10 text-zinc-200">
+            <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="success">Success</SelectItem>
               <SelectItem value="error">Error</SelectItem>
@@ -162,89 +142,82 @@ export default function HistoryPage() {
         </div>
       </header>
 
-      {/* Main Table Area */}
-      <div className="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full">
-        <div className="rounded-xl border border-white/10 bg-[#11121d] overflow-hidden">
+      {/* Main Table View Area */}
+      <div className="flex-1 overflow-auto p-8 max-w-7xl mx-auto w-full">
+        <div className="rounded-2xl border border-white/10 bg-[#11131f] overflow-hidden shadow-xl shadow-black/40">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-white/10 bg-[#0d0e17] text-xs font-mono text-zinc-400 uppercase tracking-wider">
-                <th className="py-3.5 px-5">Timestamp</th>
-                <th className="py-3.5 px-5">Classified Intent</th>
-                <th className="py-3.5 px-5">Assigned Target</th>
-                <th className="py-3.5 px-5">Latency</th>
-                <th className="py-3.5 px-5">Token Volume</th>
-                <th className="py-3.5 px-5">Estimated Cost</th>
-                <th className="py-3.5 px-5">Execution Status</th>
+              <tr className="border-b border-white/10 bg-[#0c0d15] text-xs font-mono text-slate-400 uppercase tracking-wider">
+                <th className="py-4 px-6 text-left">Timestamp</th>
+                <th className="py-4 px-6 text-left">Classified Intent</th>
+                <th className="py-4 px-6 text-left">Assigned Provider & Model</th>
+                <th className="py-4 px-6 text-right">Latency</th>
+                <th className="py-4 px-6 text-right">Tokens (In → Out)</th>
+                <th className="py-4 px-6 text-right">Estimated Cost</th>
+                <th className="py-4 px-6 text-center">Execution Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 text-sm">
               {filtered.map((log) => (
-                <>
+                <React.Fragment key={log.id}>
                   <tr
-                    key={log.id}
                     onClick={() => setExpandedRow(expandedRow === log.id ? null : log.id)}
-                    className="cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    className="cursor-pointer hover:bg-white/[0.03] transition-colors"
                   >
-                    <td className="py-4 px-5 font-mono text-xs text-zinc-400">
+                    <td className="py-4 px-6 font-mono text-xs text-slate-400 text-left">
                       {new Date(log.created_at).toLocaleTimeString()}
                     </td>
-                    <td className="py-4 px-5">
-                      <Badge className={`text-xs font-mono border ${TASK_TYPE_COLORS[log.task_type] ?? TASK_TYPE_COLORS.general}`}>
-                        {log.task_type}
-                      </Badge>
+                    <td className="py-4 px-6 text-left">
+                      <DsIntentBadge intent={log.task_type} />
                     </td>
-                    <td className="py-4 px-5">
+                    <td className="py-4 px-6 text-left">
                       <div className="flex items-center gap-2">
-                        <Badge className={`text-xs font-mono ${PROVIDER_STYLES[log.provider]}`}>
-                          {log.provider}
-                        </Badge>
-                        <span className="font-mono text-xs text-zinc-300">
+                        <DsProviderBadge provider={log.provider} />
+                        <span className="font-mono text-xs text-slate-300 font-medium">
                           {log.model}
                         </span>
                       </div>
                     </td>
-                    <td className="py-4 px-5 font-mono text-xs font-semibold text-white">
+                    <td className="py-4 px-6 font-mono text-xs font-semibold text-white text-right">
                       {log.latency_ms}ms
                     </td>
-                    <td className="py-4 px-5 font-mono text-xs text-zinc-400">
+                    <td className="py-4 px-6 font-mono text-xs text-slate-400 text-right">
                       {log.input_tokens} → {log.output_tokens}
                     </td>
-                    <td className="py-4 px-5 font-mono text-xs text-emerald-400 font-medium">
+                    <td className="py-4 px-6 font-mono text-xs text-emerald-400 font-semibold text-right">
                       ${log.estimated_cost_usd.toFixed(6)}
                     </td>
-                    <td className="py-4 px-5">
-                      <Badge className={`text-xs font-mono border ${STATUS_STYLES[log.status] ?? STATUS_STYLES.success}`}>
-                        {log.status}
-                      </Badge>
+                    <td className="py-4 px-6 text-center">
+                      <DsStatusBadge status={log.status} />
                     </td>
                   </tr>
                   {expandedRow === log.id && (
-                    <tr key={`${log.id}-detail`}>
-                      <td colSpan={7} className="!bg-[#090a12] p-5 border-t border-white/5">
+                    <tr>
+                      <td colSpan={7} className="!bg-[#090a12] p-6 border-t border-white/5">
                         <div className="space-y-2">
-                          <span className="text-xs font-mono font-semibold text-indigo-400 uppercase tracking-wider block">
+                          <span className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-wider block">
                             Policy Resolution Reason
                           </span>
-                          <p className="text-xs font-mono text-zinc-300 leading-relaxed">
+                          <p className="text-xs font-mono text-slate-300 leading-relaxed">
                             {log.routing_reason}
                           </p>
-                          <div className="flex items-center gap-6 mt-3 text-xs font-mono text-zinc-400">
+                          <div className="flex items-center gap-6 mt-3 text-xs font-mono text-slate-400">
                             <span>Priority Mode: <span className="text-white font-semibold">{log.priority}</span></span>
                             <span>Prompt Length: <span className="text-white font-semibold">{log.prompt_length} chars</span></span>
-                            <span>Correlation ID: <span className="text-zinc-300">{log.correlation_id}</span></span>
+                            <span>Correlation ID: <span className="text-slate-300">{log.correlation_id}</span></span>
                           </div>
                         </div>
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
 
           {filtered.length === 0 && (
-            <div className="p-12 text-center text-sm font-mono text-zinc-500">
-              No request logs match the selected filter criteria.
+            <div className="p-12 text-center text-sm font-mono text-slate-500">
+              No request audit logs match the selected filter criteria.
             </div>
           )}
         </div>
