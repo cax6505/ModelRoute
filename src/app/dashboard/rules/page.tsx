@@ -228,14 +228,32 @@ export default function RulesEditorPage() {
         </DsCard>
 
         {/* Code Terminal Output for Policy Resolution */}
-        <div className="rounded-2xl border border-white/10 bg-[#07080e] overflow-hidden">
-          <div className="px-5 py-3 bg-[#0c0d15] border-b border-white/10 text-xs font-mono text-indigo-400 font-bold uppercase tracking-wider">
-            Policy Resolution Output Preview
+        <div className="rounded-2xl border border-white/10 bg-[#07080e] overflow-hidden space-y-0">
+          <div className="px-5 py-3 bg-[#0c0d15] border-b border-white/10 text-xs font-mono text-indigo-400 font-bold uppercase tracking-wider flex items-center justify-between">
+            <span>Policy Resolution String Output</span>
+            <span className="text-[10px] text-slate-500 font-normal">Generated in real-time</span>
           </div>
-          <div className="p-5 font-mono text-xs text-slate-300 leading-relaxed">
+          <div className="p-5 font-mono text-xs text-slate-300 leading-relaxed bg-[#0a0b12]">
             &quot;task_type={selectedTask}, priority={selectedPriority}, top_candidate={activeRule.candidates[0]?.provider}/{activeRule.candidates[0]?.model}, reason=highest weight ({activeRule.candidates[0]?.weight}) for {selectedPriority} {selectedTask}&quot;
           </div>
         </div>
+
+        {/* Live Policy Simulation Card */}
+        <DsCard
+          isHero
+          title="Interactive Rule Simulator"
+          subtitle="Test how your candidate weights resolve prompt queries before committing changes."
+        >
+          <div className="space-y-3 font-mono text-xs">
+            <div className="flex items-center justify-between text-slate-400">
+              <span>Simulated Route Decision:</span>
+              <span className="text-emerald-400 font-bold">{activeRule.candidates[0]?.provider.toUpperCase()} ({activeRule.candidates[0]?.model})</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-slate-300">
+              Primary candidate <span className="text-indigo-300 font-bold">{activeRule.candidates[0]?.model}</span> assigned with {activeRule.candidates[0]?.weight}/10 priority weight. Fallback path prepared: {activeRule.candidates.slice(1).map(c => `${c.provider}/${c.model}`).join(' ➔ ')}.
+            </div>
+          </div>
+        </DsCard>
       </div>
     </div>
   );

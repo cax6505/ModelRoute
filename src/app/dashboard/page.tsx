@@ -27,6 +27,7 @@ import {
   Terminal as TerminalIcon,
   Cpu,
   Loader2,
+  Activity,
 } from 'lucide-react';
 import {
   DsButton,
@@ -308,6 +309,45 @@ export default function PlaygroundPage() {
           {/* Right Column: Execution Output Terminal & Diagnostics */}
           <div className="flex flex-col space-y-4">
             
+            {/* Live Pipeline Visualizer */}
+            <div className="p-4 rounded-2xl border border-white/10 bg-[#0c0d15] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-indigo-400" /> Dynamic Route Pipeline Visualizer
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                  {isStreaming ? 'STREAMING ACTIVE' : routingDecision ? 'ROUTE RESOLVED' : 'AWAITING DISPATCH'}
+                </span>
+              </div>
+
+              {/* Horizontal Pipeline Steps */}
+              <div className="grid grid-cols-4 gap-2 pt-1">
+                {/* Step 1: Input */}
+                <div className={`p-2.5 rounded-xl border transition-all text-center ${prompt ? 'bg-indigo-500/10 border-indigo-500/40 text-indigo-300' : 'bg-white/[0.02] border-white/5 text-slate-500'}`}>
+                  <span className="text-[9px] font-mono uppercase block font-semibold">1. Prompt Input</span>
+                  <span className="text-xs font-mono font-bold">{prompt ? `${prompt.length} chars` : 'Empty'}</span>
+                </div>
+
+                {/* Step 2: Classifier */}
+                <div className={`p-2.5 rounded-xl border transition-all text-center ${routingDecision ? 'bg-purple-500/10 border-purple-500/40 text-purple-300' : 'bg-white/[0.02] border-white/5 text-slate-500'}`}>
+                  <span className="text-[9px] font-mono uppercase block font-semibold">2. Classifier</span>
+                  <span className="text-xs font-mono font-bold">{routingDecision ? routingDecision.taskType : 'Pending'}</span>
+                </div>
+
+                {/* Step 3: Circuit Breaker */}
+                <div className={`p-2.5 rounded-xl border transition-all text-center ${routingDecision ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300' : 'bg-white/[0.02] border-white/5 text-slate-500'}`}>
+                  <span className="text-[9px] font-mono uppercase block font-semibold">3. Breaker Status</span>
+                  <span className="text-xs font-mono font-bold">{routingDecision ? 'CLOSED (Pass)' : 'Ready'}</span>
+                </div>
+
+                {/* Step 4: Provider */}
+                <div className={`p-2.5 rounded-xl border transition-all text-center ${routingDecision ? 'bg-amber-500/10 border-amber-500/40 text-amber-300' : 'bg-white/[0.02] border-white/5 text-slate-500'}`}>
+                  <span className="text-[9px] font-mono uppercase block font-semibold">4. Target Provider</span>
+                  <span className="text-xs font-mono font-bold">{routingDecision ? routingDecision.provider.toUpperCase() : 'Waiting'}</span>
+                </div>
+              </div>
+            </div>
+
             {/* Diagnostic Resolution Card */}
             {routingDecision ? (
               <DsCard
@@ -322,12 +362,12 @@ export default function PlaygroundPage() {
                   <div className="flex items-center gap-4 font-mono text-xs">
                     {routingDecision.latencyMs && (
                       <span className="flex items-center gap-1.5 text-slate-300 font-semibold">
-                        <Clock className="w-3.5 h-3.5 text-amber-400" /> {routingDecision.latencyMs}ms
+                        <Clock className="w-3.5 h-3.5 text-amber-400" /> {routingDecision.latencyMs}ms Total Latency
                       </span>
                     )}
                     {routingDecision.estimatedCostUsd !== undefined && (
                       <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                        <DollarSign className="w-3.5 h-3.5" /> ${routingDecision.estimatedCostUsd.toFixed(6)}
+                        <DollarSign className="w-3.5 h-3.5" /> ${routingDecision.estimatedCostUsd.toFixed(6)} Cost
                       </span>
                     )}
                   </div>
@@ -361,10 +401,10 @@ export default function PlaygroundPage() {
 
                     <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                       <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
-                        Classifier Confidence
+                        Confidence Score
                       </span>
                       <span className="font-mono text-xs text-emerald-400 font-bold block">
-                        {(routingDecision.classifierConfidence * 100).toFixed(0)}%
+                        {(routingDecision.classifierConfidence * 100).toFixed(0)}% Match
                       </span>
                     </div>
                   </div>
@@ -388,7 +428,7 @@ export default function PlaygroundPage() {
             )}
 
             {/* Output Stream Terminal */}
-            <div className="flex-1 flex flex-col rounded-2xl border border-white/10 bg-[#0c0d15] overflow-hidden min-h-[300px]">
+            <div className="flex-1 flex flex-col rounded-2xl border border-white/10 bg-[#0c0d15] overflow-hidden min-h-[300px] shadow-2xl shadow-black/50">
               <div className="h-10 px-4 bg-[#11131f] border-b border-white/10 flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
@@ -436,3 +476,4 @@ export default function PlaygroundPage() {
     </div>
   );
 }
+

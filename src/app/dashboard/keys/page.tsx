@@ -116,12 +116,12 @@ export default function ApiKeysPage() {
                 <div>
                   <div className="flex items-center gap-3">
                     <span className="font-bold text-sm text-white">{item.name}</span>
-                    <Badge variant={item.is_revoked ? 'destructive' : 'outline'} className="text-xs font-mono">
-                      {item.is_revoked ? 'Revoked' : 'Active'}
+                    <Badge variant={item.is_revoked ? 'destructive' : 'outline'} className="text-xs font-mono border-emerald-500/40 text-emerald-400 bg-emerald-500/10">
+                      {item.is_revoked ? 'Revoked' : 'Active (SHA-256)'}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-6 mt-2 font-mono text-xs text-slate-400">
-                    <span>Key Prefix: <span className="text-slate-200 font-semibold">{item.key_prefix}...</span></span>
+                  <div className="flex items-center gap-6 mt-2.5 font-mono text-xs text-slate-400">
+                    <span>Key Prefix: <span className="text-indigo-300 font-semibold">{item.key_prefix}...</span></span>
                     <span>Rate Limit: <span className="text-slate-200 font-semibold">{item.rate_limit_rpm} RPM</span></span>
                     <span>Created: <span className="text-slate-300">{new Date(item.created_at).toLocaleDateString()}</span></span>
                   </div>

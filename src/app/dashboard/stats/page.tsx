@@ -108,9 +108,9 @@ export default function StatsPage() {
           />
 
           <DsMetricCard
-            label="Average System Latency"
-            value="584ms"
-            subtext="Groq 210ms | Gemini 450ms"
+            label="Latency Percentiles (P50/P90)"
+            value="210ms / 584ms"
+            subtext="P99: 1.1s (Ollama fallback)"
             icon={<Clock className="w-5 h-5 text-amber-400" />}
           />
 

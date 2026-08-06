@@ -77,17 +77,32 @@ export default function HistoryPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   const filtered = logs.filter((log) => {
     if (filterTask !== 'all' && log.task_type !== filterTask) return false;
     if (filterProvider !== 'all' && log.provider !== filterProvider) return false;
     if (filterStatus !== 'all' && log.status !== filterStatus) return false;
+    if (searchQuery.trim() && !log.routing_reason.toLowerCase().includes(searchQuery.toLowerCase()) && !log.model.toLowerCase().includes(searchQuery.toLowerCase()) && !log.correlation_id.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
     return true;
   });
+
+  const exportJSON = () => {
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(filtered, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', `modelroute_audit_logs_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#07080e]">
       {/* Console Header */}
-      <header className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-[#0c0d15] flex-shrink-0">
+      <header className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-[#0c0d15] flex-shrink-0 flex-wrap gap-4">
         <div>
           <h1 className="text-lg font-extrabold text-white tracking-tight flex items-center gap-2.5">
             <HistoryIcon className="w-5 h-5 text-indigo-400" />
@@ -99,9 +114,17 @@ export default function HistoryPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <input
+            type="text"
+            placeholder="Search logs or correlation IDs..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-9 px-3 text-xs bg-white/5 border border-white/10 rounded-xl text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 w-[200px]"
+          />
+
           <Filter className="w-4 h-4 text-slate-400" />
           <Select value={filterTask} onValueChange={(val) => setFilterTask(val ?? 'all')}>
-            <SelectTrigger className="w-[155px] h-9 text-xs bg-white/5 border-white/10 text-slate-200">
+            <SelectTrigger className="w-[145px] h-9 text-xs bg-white/5 border-white/10 text-slate-200">
               <SelectValue placeholder="Task Intent" />
             </SelectTrigger>
             <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
@@ -117,7 +140,7 @@ export default function HistoryPage() {
           </Select>
 
           <Select value={filterProvider} onValueChange={(val) => setFilterProvider(val ?? 'all')}>
-            <SelectTrigger className="w-[140px] h-9 text-xs bg-white/5 border-white/10 text-slate-200">
+            <SelectTrigger className="w-[130px] h-9 text-xs bg-white/5 border-white/10 text-slate-200">
               <SelectValue placeholder="Provider" />
             </SelectTrigger>
             <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
@@ -128,17 +151,12 @@ export default function HistoryPage() {
             </SelectContent>
           </Select>
 
-          <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val ?? 'all')}>
-            <SelectTrigger className="w-[130px] h-9 text-xs bg-white/5 border-white/10 text-slate-200">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="success">Success</SelectItem>
-              <SelectItem value="error">Error</SelectItem>
-              <SelectItem value="fallback">Fallback</SelectItem>
-            </SelectContent>
-          </Select>
+          <button
+            onClick={exportJSON}
+            className="h-9 px-3.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-mono font-semibold transition-all"
+          >
+            Export JSON
+          </button>
         </div>
       </header>
 
