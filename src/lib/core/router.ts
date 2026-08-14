@@ -476,6 +476,14 @@ export async function executeStreamWithFallback(
         actualModel: candidate.model,
       };
     } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      breaker.recordFailure(candidate.provider);
+      log.warn(`Stream provider ${candidate.provider}/${candidate.model} connection failed — failing over`, {
+        error: lastError.message,
+      });
+    }
+  }
+
   // Fallback demo simulation if providers fail or are unconfigured
   log.warn('All live providers failed or unconfigured, utilizing demo simulation mode', {
     lastError: lastError?.message,
