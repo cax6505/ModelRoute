@@ -57,7 +57,14 @@ export default function EvalPage() {
     setIsRunning(true);
     try {
       const res = await fetch('/api/eval', { method: 'POST' });
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const text = await res.text();
+      if (!text) {
+        throw new Error('Empty response from server');
+      }
+      const data = JSON.parse(text);
       if (data.evalRun) {
         setEvalRun(data.evalRun);
       }

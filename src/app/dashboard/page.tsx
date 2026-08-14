@@ -114,8 +114,17 @@ export default function PlaygroundPage() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || `HTTP ${res.status}`);
+        let errorMessage = `HTTP ${res.status}`;
+        try {
+          const text = await res.text();
+          if (text) {
+            const err = JSON.parse(text);
+            errorMessage = err.error || errorMessage;
+          }
+        } catch {
+          // Response body was empty or not valid JSON
+        }
+        throw new Error(errorMessage);
       }
 
       const reader = res.body?.getReader();

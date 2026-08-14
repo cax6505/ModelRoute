@@ -103,32 +103,37 @@ export async function POST(request: NextRequest) {
 
     // ─── 4. Check Idempotency ──────────────────────────────
     if (idempotencyKey) {
-      const supabase = getSupabaseAdmin();
-      const { data: existing } = await supabase
-        .from('request_logs')
-        .select('id, status, routing_reason, provider, model, latency_ms')
-        .eq('idempotency_key', idempotencyKey)
-        .limit(1)
-        .single();
+      try {
+        const supabase = getSupabaseAdmin();
+        const { data: existing } = await supabase
+          .from('request_logs')
+          .select('id, status, routing_reason, provider, model, latency_ms')
+          .eq('idempotency_key', idempotencyKey)
+          .limit(1)
+          .single();
 
-      if (existing) {
-        log.info('Idempotent request — returning cached result', { idempotencyKey });
-        return Response.json({
-          content: '[Idempotent response — original result was already processed]',
-          routingDecision: {
-            taskType: 'general',
-            classifierMode: 'rules',
-            classifierConfidence: 1,
-            provider: existing.provider,
-            model: existing.model,
-            reason: `Idempotent replay of request ${idempotencyKey}`,
-            fallbacksConsidered: [],
-            latencyMs: existing.latency_ms,
-            inputTokens: 0,
-            outputTokens: 0,
-            estimatedCostUsd: 0,
-          },
-        });
+        if (existing) {
+          log.info('Idempotent request — returning cached result', { idempotencyKey });
+          return Response.json({
+            content: '[Idempotent response — original result was already processed]',
+            routingDecision: {
+              taskType: 'general',
+              classifierMode: 'rules',
+              classifierConfidence: 1,
+              provider: existing.provider,
+              model: existing.model,
+              reason: `Idempotent replay of request ${idempotencyKey}`,
+              fallbacksConsidered: [],
+              latencyMs: existing.latency_ms,
+              inputTokens: 0,
+              outputTokens: 0,
+              estimatedCostUsd: 0,
+            },
+          });
+        }
+      } catch {
+        // Supabase not configured — skip idempotency check
+        log.warn('Idempotency check skipped — database not available');
       }
     }
 
@@ -395,11 +400,11 @@ function logRequest(params: {
         error_message: params.errorMessage ?? null,
         idempotency_key: params.idempotencyKey ?? null,
       });
-    } catch (error) {
-      // Never let logging failure crash the response
-      logger.error('Failed to log request', {
+    } catch {
+      // Never let logging failure crash the response —
+      // this includes cases where Supabase is not configured
+      logger.warn('Request logging skipped — database not available', {
         correlationId: params.correlationId,
-        error: error instanceof Error ? error.message : 'Unknown',
       });
     }
   })();
