@@ -198,14 +198,13 @@ export function selectRoute(options: RouteOptions): RoutingDecision {
   candidates = candidates.filter((c) => availableProviders.includes(c.provider));
 
   if (candidates.length === 0) {
-    // No providers available at all — this is a critical failure
     return {
       taskType,
       classifierMode: classification.method,
       classifierConfidence: classification.confidence,
-      provider: 'groq', // Placeholder
+      provider: 'groq',
       model: 'none',
-      reason: 'No LLM providers are configured or available',
+      reason: 'No LLM API keys configured (set GROQ_API_KEY or GEMINI_API_KEY in environment variables)',
       fallbacksConsidered: [],
     };
   }

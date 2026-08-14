@@ -175,6 +175,14 @@ export async function POST(request: NextRequest) {
       reason: decision.reason,
     });
 
+    if (decision.model === 'none') {
+      return createApiError(
+        'NO_PROVIDERS_CONFIGURED',
+        'No LLM API keys are configured on this deployment. Please configure GROQ_API_KEY or GEMINI_API_KEY in your environment variables.',
+        503,
+      );
+    }
+
     // ─── 7. Execute Request ────────────────────────────────
     const messages = [{ role: 'user' as const, content: prompt }];
 
