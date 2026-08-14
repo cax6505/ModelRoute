@@ -237,14 +237,15 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     const latencyMs = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown';
     log.error('Request failed', {
-      error: error instanceof Error ? error.message : 'Unknown',
+      error: errorMessage,
       latencyMs,
     });
 
     return createApiError(
       'INTERNAL_ERROR',
-      'An internal error occurred while processing your request',
+      `Request failed: ${errorMessage}`,
       500,
     );
   }
