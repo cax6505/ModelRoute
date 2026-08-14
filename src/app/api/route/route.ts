@@ -33,7 +33,7 @@ import { logger, generateCorrelationId } from '@/lib/logger';
 import type { ProviderName, PriorityMode, RoutingDecision } from '@/lib/core/types';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 15;
 
 export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
@@ -355,9 +355,8 @@ async function handleStreaming(
 
   return new Response(readable, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
       'X-Correlation-ID': correlationId,
     },
   });
