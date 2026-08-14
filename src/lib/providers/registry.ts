@@ -45,10 +45,19 @@ class ProviderRegistry {
       log.warn('Gemini provider not available: GEMINI_API_KEY not set');
     }
 
-    // Ollama — always attempt (it's local, no key needed)
-    const ollamaUrl = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434';
-    this.providers.set('ollama', new OllamaProvider(ollamaUrl));
-    log.info('Ollama provider initialized', { baseUrl: ollamaUrl });
+    // Ollama — only add if explicitly configured with a remote URL, or in local development
+    const ollamaUrl = process.env.OLLAMA_BASE_URL;
+    const isCloud = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+
+    if (ollamaUrl && !ollamaUrl.includes('localhost') && !ollamaUrl.includes('127.0.0.1')) {
+      this.providers.set('ollama', new OllamaProvider(ollamaUrl));
+      log.info('Ollama provider initialized with remote URL', { baseUrl: ollamaUrl });
+    } else if (!isCloud) {
+      this.providers.set('ollama', new OllamaProvider('http://localhost:11434'));
+      log.info('Ollama provider initialized (local development)');
+    } else {
+      log.warn('Ollama skipped in cloud deployment (localhost is unreachable)');
+    }
   }
 
   /**
