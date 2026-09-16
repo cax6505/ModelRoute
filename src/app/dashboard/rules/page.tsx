@@ -24,8 +24,8 @@ const INITIAL_RULES: PolicyRule[] = [
     taskType: 'code_generation',
     priorityMode: 'quality',
     candidates: [
-      { provider: 'groq', model: 'llama-3.3-70b-versatile', weight: 10 },
-      { provider: 'gemini', model: 'gemini-2.0-flash', weight: 8 },
+      { provider: 'groq', model: 'openai/gpt-oss-120b', weight: 10 },
+      { provider: 'gemini', model: 'gemini-3.5-flash', weight: 8 },
       { provider: 'ollama', model: 'llama3.2', weight: 3 },
     ],
   },
@@ -33,8 +33,8 @@ const INITIAL_RULES: PolicyRule[] = [
     taskType: 'code_generation',
     priorityMode: 'fast',
     candidates: [
-      { provider: 'groq', model: 'llama-3.1-8b-instant', weight: 10 },
-      { provider: 'gemini', model: 'gemini-2.0-flash-lite', weight: 8 },
+      { provider: 'groq', model: 'openai/gpt-oss-20b', weight: 10 },
+      { provider: 'gemini', model: 'gemini-3.5-flash-lite', weight: 8 },
       { provider: 'ollama', model: 'llama3.2', weight: 3 },
     ],
   },
@@ -52,8 +52,8 @@ export default function RulesEditorPage() {
     taskType: selectedTask,
     priorityMode: selectedPriority,
     candidates: [
-      { provider: 'groq', model: 'llama-3.1-8b-instant', weight: 10 },
-      { provider: 'gemini', model: 'gemini-2.0-flash-lite', weight: 8 },
+      { provider: 'groq', model: 'openai/gpt-oss-20b', weight: 10 },
+      { provider: 'gemini', model: 'gemini-3.5-flash-lite', weight: 8 },
       { provider: 'ollama', model: 'llama3.2', weight: 5 },
     ],
   };

@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
       const groqProvider = providerRegistry.getProvider('groq');
       if (groqProvider) {
         classifierProvider = groqProvider;
-        classifierModel = 'llama-3.1-8b-instant';
+        classifierModel = 'openai/gpt-oss-20b';
       }
     }
 

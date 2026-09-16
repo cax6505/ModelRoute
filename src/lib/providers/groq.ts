@@ -21,26 +21,48 @@ import { logger } from '@/lib/logger';
 
 const GROQ_MODELS: ModelInfo[] = [
   {
-    id: 'llama-3.1-8b-instant',
-    name: 'Llama 3.1 8B Instant',
+    id: 'openai/gpt-oss-20b',
+    name: 'GPT-OSS 20B',
     provider: 'groq',
     contextWindow: 131_072,
     maxOutputTokens: 8_192,
     costPer1MInput: 0.05,
     costPer1MOutput: 0.08,
     capabilityTier: 1,
-    avgLatencyMs: 200,
+    avgLatencyMs: 150,
   },
   {
-    id: 'llama-3.3-70b-versatile',
-    name: 'Llama 3.3 70B Versatile',
+    id: 'openai/gpt-oss-120b',
+    name: 'GPT-OSS 120B',
     provider: 'groq',
     contextWindow: 131_072,
     maxOutputTokens: 32_768,
     costPer1MInput: 0.59,
     costPer1MOutput: 0.79,
     capabilityTier: 3,
-    avgLatencyMs: 800,
+    avgLatencyMs: 500,
+  },
+  {
+    id: 'llama-3.1-8b-instant',
+    name: 'Llama 3.1 8B Instant (Legacy)',
+    provider: 'groq',
+    contextWindow: 131_072,
+    maxOutputTokens: 8_192,
+    costPer1MInput: 0.05,
+    costPer1MOutput: 0.08,
+    capabilityTier: 1,
+    avgLatencyMs: 150,
+  },
+  {
+    id: 'llama-3.3-70b-versatile',
+    name: 'Llama 3.3 70B Versatile (Legacy)',
+    provider: 'groq',
+    contextWindow: 131_072,
+    maxOutputTokens: 32_768,
+    costPer1MInput: 0.59,
+    costPer1MOutput: 0.79,
+    capabilityTier: 3,
+    avgLatencyMs: 500,
   },
 ];
 
@@ -52,6 +74,13 @@ export class GroqProvider implements LLMProvider {
 
   constructor(apiKey: string) {
     this.client = new Groq({ apiKey });
+  }
+
+  /** Map legacy decommissioned model IDs to active available models */
+  private resolveModelId(modelId: string): string {
+    if (modelId === 'llama-3.1-8b-instant') return 'openai/gpt-oss-20b';
+    if (modelId === 'llama-3.3-70b-versatile') return 'openai/gpt-oss-120b';
+    return modelId;
   }
 
   async complete(request: CompletionRequest): Promise<CompletionResponse> {
@@ -66,10 +95,12 @@ export class GroqProvider implements LLMProvider {
       request.signal.addEventListener('abort', () => controller.abort());
     }
 
+    const actualModel = this.resolveModelId(request.model);
+
     try {
       const response = await this.client.chat.completions.create(
         {
-          model: request.model,
+          model: actualModel,
           messages: request.messages.map((m) => ({
             role: m.role,
             content: m.content,
@@ -83,7 +114,7 @@ export class GroqProvider implements LLMProvider {
       const latencyMs = Date.now() - startTime;
       const inputTokens = response.usage?.prompt_tokens ?? 0;
       const outputTokens = response.usage?.completion_tokens ?? 0;
-      const model = this.models.find((m) => m.id === request.model) ?? GROQ_MODELS[0];
+      const model = this.models.find((m) => m.id === request.model || m.id === actualModel) ?? GROQ_MODELS[0];
 
       return {
         content: response.choices[0]?.message?.content ?? '',
@@ -114,13 +145,15 @@ export class GroqProvider implements LLMProvider {
       request.signal.addEventListener('abort', () => controller.abort());
     }
 
+    const actualModel = this.resolveModelId(request.model);
+
     try {
       const stream = await this.client.chat.completions.create(
         {
-          model: request.model,
+          model: actualModel,
           messages: request.messages.map((m) => ({
             role: m.role,
-            content: m.content,
+          content: m.content,
           })),
           max_tokens: request.maxTokens ?? 4096,
           temperature: request.temperature ?? 0.7,

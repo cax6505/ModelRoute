@@ -43,13 +43,13 @@ export default function EvalPage() {
     accuracyScore: 86,
     completedAt: new Date().toISOString(),
     results: [
-      { benchmarkId: 'b1', prompt: 'Write a Python function to check if a string is a palindrome', expectedTaskType: 'code_generation', actualTaskType: 'code_generation', classificationCorrect: true, provider: 'groq', model: 'llama-3.3-70b-versatile', latencyMs: 310, qualityScore: 5 },
-      { benchmarkId: 'b2', prompt: 'Summarize the core differences between RPC and REST APIs', expectedTaskType: 'summarization', actualTaskType: 'summarization', classificationCorrect: true, provider: 'gemini', model: 'gemini-2.0-flash', latencyMs: 820, qualityScore: 5 },
-      { benchmarkId: 'b3', prompt: 'Extract all dates from this log text: "Server started at 2026-01-01 and rebooted at 2026-02-15"', expectedTaskType: 'extraction', actualTaskType: 'extraction', classificationCorrect: true, provider: 'gemini', model: 'gemini-2.0-flash', latencyMs: 640, qualityScore: 4 },
-      { benchmarkId: 'b4', prompt: 'Write a short sci-fi story about an autonomous satellite', expectedTaskType: 'creative_writing', actualTaskType: 'creative_writing', classificationCorrect: true, provider: 'gemini', model: 'gemini-2.0-flash', latencyMs: 950, qualityScore: 5 },
-      { benchmarkId: 'b5', prompt: 'If all A are B and all B are C, are all A necessarily C? Explain.', expectedTaskType: 'reasoning', actualTaskType: 'reasoning', classificationCorrect: true, provider: 'gemini', model: 'gemini-2.0-flash', latencyMs: 1100, qualityScore: 5 },
-      { benchmarkId: 'b6', prompt: 'What is the time complexity of quicksort in the worst case?', expectedTaskType: 'simple_qa', actualTaskType: 'simple_qa', classificationCorrect: true, provider: 'groq', model: 'llama-3.1-8b-instant', latencyMs: 180, qualityScore: 5 },
-      { benchmarkId: 'b7', prompt: 'Translate "Good morning, how can I help you today?" to French', expectedTaskType: 'translation', actualTaskType: 'translation', classificationCorrect: true, provider: 'gemini', model: 'gemini-2.0-flash', latencyMs: 420, qualityScore: 5 },
+      { benchmarkId: 'b1', prompt: 'Write a Python function to check if a string is a palindrome', expectedTaskType: 'code_generation', actualTaskType: 'code_generation', classificationCorrect: true, provider: 'groq', model: 'openai/gpt-oss-120b', latencyMs: 310, qualityScore: 5 },
+      { benchmarkId: 'b2', prompt: 'Summarize the core differences between RPC and REST APIs', expectedTaskType: 'summarization', actualTaskType: 'summarization', classificationCorrect: true, provider: 'gemini', model: 'gemini-3.5-flash', latencyMs: 820, qualityScore: 5 },
+      { benchmarkId: 'b3', prompt: 'Extract all dates from this log text: "Server started at 2026-01-01 and rebooted at 2026-02-15"', expectedTaskType: 'extraction', actualTaskType: 'extraction', classificationCorrect: true, provider: 'gemini', model: 'gemini-3.5-flash', latencyMs: 640, qualityScore: 4 },
+      { benchmarkId: 'b4', prompt: 'Write a short sci-fi story about an autonomous satellite', expectedTaskType: 'creative_writing', actualTaskType: 'creative_writing', classificationCorrect: true, provider: 'gemini', model: 'gemini-3.5-flash', latencyMs: 950, qualityScore: 5 },
+      { benchmarkId: 'b5', prompt: 'If all A are B and all B are C, are all A necessarily C? Explain.', expectedTaskType: 'reasoning', actualTaskType: 'reasoning', classificationCorrect: true, provider: 'gemini', model: 'gemini-3.5-flash', latencyMs: 1100, qualityScore: 5 },
+      { benchmarkId: 'b6', prompt: 'What is the time complexity of quicksort in the worst case?', expectedTaskType: 'simple_qa', actualTaskType: 'simple_qa', classificationCorrect: true, provider: 'groq', model: 'openai/gpt-oss-20b', latencyMs: 180, qualityScore: 5 },
+      { benchmarkId: 'b7', prompt: 'Translate "Good morning, how can I help you today?" to French', expectedTaskType: 'translation', actualTaskType: 'translation', classificationCorrect: true, provider: 'gemini', model: 'gemini-3.5-flash', latencyMs: 420, qualityScore: 5 },
     ],
   });
 

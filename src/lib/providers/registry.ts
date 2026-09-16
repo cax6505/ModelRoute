@@ -22,10 +22,21 @@ class ProviderRegistry {
    * Initialize providers based on available API keys.
    * Called lazily on first access — not at module load time
    * to avoid crashing during Next.js build.
+   *
+   * In development mode, re-initializes on every access to pick up
+   * env var changes without requiring a full server restart.
    */
   private init(): void {
-    if (this.initialized) return;
+    // In development, always re-read env vars to handle hot module reloads
+    // and cases where env vars weren't available during initial module load.
+    if (this.initialized && process.env.NODE_ENV !== 'development') return;
+
+    // If re-initializing in dev mode, only do so if providers are empty
+    // (avoids unnecessary re-creation of provider instances on every call).
+    if (this.initialized && this.providers.size > 0) return;
+
     this.initialized = true;
+    this.providers.clear();
 
     // Groq
     const groqKey = process.env.GROQ_API_KEY;
@@ -58,6 +69,21 @@ class ProviderRegistry {
     } else {
       log.warn('Ollama skipped in cloud deployment (localhost is unreachable)');
     }
+
+    if (this.providers.size === 0) {
+      log.error('No LLM providers initialized — check that GROQ_API_KEY or GEMINI_API_KEY is set in .env.local');
+    } else {
+      log.info(`Provider registry initialized with ${this.providers.size} provider(s): ${Array.from(this.providers.keys()).join(', ')}`);
+    }
+  }
+
+  /**
+   * Force re-initialization of providers.
+   * Useful when env vars have changed at runtime.
+   */
+  reset(): void {
+    this.initialized = false;
+    this.providers.clear();
   }
 
   /**
@@ -120,5 +146,18 @@ class ProviderRegistry {
   }
 }
 
-/** Singleton instance */
-export const providerRegistry = new ProviderRegistry();
+/**
+ * Singleton instance — uses globalThis to survive Next.js hot module reloads.
+ * Without this, the module can be re-evaluated during HMR, creating a new
+ * ProviderRegistry that may not have access to env vars yet.
+ */
+const globalForProviders = globalThis as unknown as {
+  providerRegistry: ProviderRegistry | undefined;
+};
+
+export const providerRegistry =
+  globalForProviders.providerRegistry ?? new ProviderRegistry();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForProviders.providerRegistry = providerRegistry;
+}

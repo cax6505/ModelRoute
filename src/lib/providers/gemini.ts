@@ -21,8 +21,30 @@ import { logger } from '@/lib/logger';
 
 const GEMINI_MODELS: ModelInfo[] = [
   {
+    id: 'gemini-3.5-flash',
+    name: 'Gemini 3.5 Flash',
+    provider: 'gemini',
+    contextWindow: 1_048_576,
+    maxOutputTokens: 8_192,
+    costPer1MInput: 0.10,
+    costPer1MOutput: 0.40,
+    capabilityTier: 2,
+    avgLatencyMs: 1200,
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    name: 'Gemini 3.5 Flash Lite',
+    provider: 'gemini',
+    contextWindow: 1_048_576,
+    maxOutputTokens: 8_192,
+    costPer1MInput: 0.02,
+    costPer1MOutput: 0.10,
+    capabilityTier: 1,
+    avgLatencyMs: 600,
+  },
+  {
     id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
+    name: 'Gemini 2.0 Flash (Legacy)',
     provider: 'gemini',
     contextWindow: 1_048_576,
     maxOutputTokens: 8_192,
@@ -33,7 +55,7 @@ const GEMINI_MODELS: ModelInfo[] = [
   },
   {
     id: 'gemini-2.0-flash-lite',
-    name: 'Gemini 2.0 Flash Lite',
+    name: 'Gemini 2.0 Flash Lite (Legacy)',
     provider: 'gemini',
     contextWindow: 1_048_576,
     maxOutputTokens: 8_192,
@@ -54,12 +76,20 @@ export class GeminiProvider implements LLMProvider {
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
+  /** Map legacy decommissioned Gemini model IDs to active available models */
+  private resolveModelId(modelId: string): string {
+    if (modelId === 'gemini-2.0-flash' || modelId === 'gemini-1.5-flash') return 'gemini-3.5-flash';
+    if (modelId === 'gemini-2.0-flash-lite' || modelId === 'gemini-1.5-flash-8b') return 'gemini-3.5-flash-lite';
+    return modelId;
+  }
+
   async complete(request: CompletionRequest): Promise<CompletionResponse> {
     const startTime = Date.now();
     const timeoutMs = request.timeoutMs ?? 30_000;
+    const actualModel = this.resolveModelId(request.model);
 
     const model = this.genAI.getGenerativeModel({
-      model: request.model,
+      model: actualModel,
       generationConfig: {
         maxOutputTokens: request.maxTokens ?? 4096,
         temperature: request.temperature ?? 0.7,
@@ -104,9 +134,10 @@ export class GeminiProvider implements LLMProvider {
 
   async *stream(request: CompletionRequest): AsyncGenerator<StreamChunk> {
     const startTime = Date.now();
+    const actualModel = this.resolveModelId(request.model);
 
     const model = this.genAI.getGenerativeModel({
-      model: request.model,
+      model: actualModel,
       generationConfig: {
         maxOutputTokens: request.maxTokens ?? 4096,
         temperature: request.temperature ?? 0.7,
@@ -164,7 +195,7 @@ export class GeminiProvider implements LLMProvider {
   async healthCheck(): Promise<ProviderHealth> {
     const startTime = Date.now();
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
       await model.generateContent('test');
       return {
         name: 'gemini',

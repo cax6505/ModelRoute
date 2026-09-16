@@ -217,51 +217,51 @@ CREATE POLICY "Users can update their own eval runs"
 
 -- Code Generation
 INSERT INTO public.routing_rules (user_id, task_type, priority_mode, candidates) VALUES
-(NULL, 'code_generation', 'quality', '[{"provider":"groq","model":"llama-3.3-70b-versatile","weight":10},{"provider":"gemini","model":"gemini-2.0-flash","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'code_generation', 'fast', '[{"provider":"groq","model":"llama-3.1-8b-instant","weight":10},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'code_generation', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"llama-3.1-8b-instant","weight":8},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":5}]'::jsonb);
+(NULL, 'code_generation', 'quality', '[{"provider":"groq","model":"openai/gpt-oss-120b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'code_generation', 'fast', '[{"provider":"groq","model":"openai/gpt-oss-20b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'code_generation', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"openai/gpt-oss-20b","weight":8},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":5}]'::jsonb);
 
 -- Summarization
 INSERT INTO public.routing_rules (user_id, task_type, priority_mode, candidates) VALUES
-(NULL, 'summarization', 'quality', '[{"provider":"gemini","model":"gemini-2.0-flash","weight":10},{"provider":"groq","model":"llama-3.3-70b-versatile","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'summarization', 'fast', '[{"provider":"groq","model":"llama-3.1-8b-instant","weight":10},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'summarization', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"llama-3.1-8b-instant","weight":8},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":5}]'::jsonb);
+(NULL, 'summarization', 'quality', '[{"provider":"gemini","model":"gemini-3.5-flash","weight":10},{"provider":"groq","model":"openai/gpt-oss-120b","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'summarization', 'fast', '[{"provider":"groq","model":"openai/gpt-oss-20b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'summarization', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"openai/gpt-oss-20b","weight":8},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":5}]'::jsonb);
 
 -- Extraction
 INSERT INTO public.routing_rules (user_id, task_type, priority_mode, candidates) VALUES
-(NULL, 'extraction', 'quality', '[{"provider":"gemini","model":"gemini-2.0-flash","weight":10},{"provider":"groq","model":"llama-3.3-70b-versatile","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'extraction', 'fast', '[{"provider":"groq","model":"llama-3.1-8b-instant","weight":10},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'extraction', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"llama-3.1-8b-instant","weight":8},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":5}]'::jsonb);
+(NULL, 'extraction', 'quality', '[{"provider":"gemini","model":"gemini-3.5-flash","weight":10},{"provider":"groq","model":"openai/gpt-oss-120b","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'extraction', 'fast', '[{"provider":"groq","model":"openai/gpt-oss-20b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'extraction', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"openai/gpt-oss-20b","weight":8},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":5}]'::jsonb);
 
 -- Creative Writing
 INSERT INTO public.routing_rules (user_id, task_type, priority_mode, candidates) VALUES
-(NULL, 'creative_writing', 'quality', '[{"provider":"gemini","model":"gemini-2.0-flash","weight":10},{"provider":"groq","model":"llama-3.3-70b-versatile","weight":8},{"provider":"ollama","model":"llama3.2","weight":5}]'::jsonb),
-(NULL, 'creative_writing', 'fast', '[{"provider":"groq","model":"llama-3.1-8b-instant","weight":10},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'creative_writing', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"llama-3.1-8b-instant","weight":8},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":5}]'::jsonb);
+(NULL, 'creative_writing', 'quality', '[{"provider":"gemini","model":"gemini-3.5-flash","weight":10},{"provider":"groq","model":"openai/gpt-oss-120b","weight":8},{"provider":"ollama","model":"llama3.2","weight":5}]'::jsonb),
+(NULL, 'creative_writing', 'fast', '[{"provider":"groq","model":"openai/gpt-oss-20b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'creative_writing', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"openai/gpt-oss-20b","weight":8},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":5}]'::jsonb);
 
 -- Reasoning
 INSERT INTO public.routing_rules (user_id, task_type, priority_mode, candidates) VALUES
-(NULL, 'reasoning', 'quality', '[{"provider":"gemini","model":"gemini-2.0-flash","weight":10},{"provider":"groq","model":"llama-3.3-70b-versatile","weight":9},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'reasoning', 'fast', '[{"provider":"groq","model":"llama-3.3-70b-versatile","weight":10},{"provider":"gemini","model":"gemini-2.0-flash","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'reasoning', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"llama-3.1-8b-instant","weight":7},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":5}]'::jsonb);
+(NULL, 'reasoning', 'quality', '[{"provider":"gemini","model":"gemini-3.5-flash","weight":10},{"provider":"groq","model":"openai/gpt-oss-120b","weight":9},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'reasoning', 'fast', '[{"provider":"groq","model":"openai/gpt-oss-120b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'reasoning', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"openai/gpt-oss-20b","weight":7},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":5}]'::jsonb);
 
 -- Simple QA
 INSERT INTO public.routing_rules (user_id, task_type, priority_mode, candidates) VALUES
-(NULL, 'simple_qa', 'quality', '[{"provider":"groq","model":"llama-3.1-8b-instant","weight":10},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":9},{"provider":"ollama","model":"llama3.2","weight":5}]'::jsonb),
-(NULL, 'simple_qa', 'fast', '[{"provider":"groq","model":"llama-3.1-8b-instant","weight":10},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":5}]'::jsonb),
-(NULL, 'simple_qa', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"llama-3.1-8b-instant","weight":9},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":7}]'::jsonb);
+(NULL, 'simple_qa', 'quality', '[{"provider":"groq","model":"openai/gpt-oss-20b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":9},{"provider":"ollama","model":"llama3.2","weight":5}]'::jsonb),
+(NULL, 'simple_qa', 'fast', '[{"provider":"groq","model":"openai/gpt-oss-20b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":5}]'::jsonb),
+(NULL, 'simple_qa', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"openai/gpt-oss-20b","weight":9},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":7}]'::jsonb);
 
 -- Translation
 INSERT INTO public.routing_rules (user_id, task_type, priority_mode, candidates) VALUES
-(NULL, 'translation', 'quality', '[{"provider":"gemini","model":"gemini-2.0-flash","weight":10},{"provider":"groq","model":"llama-3.3-70b-versatile","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'translation', 'fast', '[{"provider":"groq","model":"llama-3.1-8b-instant","weight":10},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'translation', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"llama-3.1-8b-instant","weight":8},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":5}]'::jsonb);
+(NULL, 'translation', 'quality', '[{"provider":"gemini","model":"gemini-3.5-flash","weight":10},{"provider":"groq","model":"openai/gpt-oss-120b","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'translation', 'fast', '[{"provider":"groq","model":"openai/gpt-oss-20b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'translation', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"openai/gpt-oss-20b","weight":8},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":5}]'::jsonb);
 
 -- General (fallback)
 INSERT INTO public.routing_rules (user_id, task_type, priority_mode, candidates) VALUES
-(NULL, 'general', 'quality', '[{"provider":"gemini","model":"gemini-2.0-flash","weight":10},{"provider":"groq","model":"llama-3.3-70b-versatile","weight":9},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
-(NULL, 'general', 'fast', '[{"provider":"groq","model":"llama-3.1-8b-instant","weight":10},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":5}]'::jsonb),
-(NULL, 'general', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"llama-3.1-8b-instant","weight":9},{"provider":"gemini","model":"gemini-2.0-flash-lite","weight":7}]'::jsonb);
+(NULL, 'general', 'quality', '[{"provider":"gemini","model":"gemini-3.5-flash","weight":10},{"provider":"groq","model":"openai/gpt-oss-120b","weight":9},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
+(NULL, 'general', 'fast', '[{"provider":"groq","model":"openai/gpt-oss-20b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":5}]'::jsonb),
+(NULL, 'general', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"openai/gpt-oss-20b","weight":9},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":7}]'::jsonb);
 
 -- ═══════════════════════════════════════════════════════════════
 -- Seed: Benchmark prompts for eval mode (~25 prompts)
