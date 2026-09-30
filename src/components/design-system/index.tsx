@@ -1,123 +1,120 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
+import React from "react";
+import { LoaderCircle, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-/* ─── 1. BUTTON COMPONENT ────────────────────────────────── */
-export interface DsButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'destructive' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
-  isLoading?: boolean;
-  icon?: React.ReactNode;
-}
+export type ProviderName = "groq" | "gemini" | "ollama" | string;
+const providerColors: Record<string, string> = {
+  groq: "var(--groq)",
+  gemini: "var(--gemini)",
+  ollama: "var(--ollama)",
+};
 
-export function DsButton({
-  children,
-  variant = 'primary',
-  size = 'md',
-  isLoading = false,
-  icon,
-  className = '',
-  disabled,
-  ...props
-}: DsButtonProps) {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100';
-
-  const sizeStyles = {
-    sm: 'h-8 px-3.5 text-xs gap-1.5',
-    md: 'h-10 px-4.5 text-xs gap-2',
-    lg: 'h-12 px-6 text-sm gap-2.5',
-  };
-
-  const variantStyles = {
-    primary: 'bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 border border-indigo-400/30',
-    secondary: 'bg-[#141727] hover:bg-[#1a1e33] text-slate-200 border border-white/10 hover:border-indigo-500/40 shadow-sm',
-    destructive: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50',
-    ghost: 'bg-transparent hover:bg-white/5 text-slate-400 hover:text-white',
-  };
-
+export function ProviderDot({
+  provider,
+  pulse = false,
+}: {
+  provider: ProviderName;
+  pulse?: boolean;
+}) {
   return (
-    <button
-      className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
-      disabled={disabled || isLoading}
-      {...props}
-    >
-      {isLoading ? (
-        <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
-      ) : (
-        icon && <span className="flex-shrink-0">{icon}</span>
-      )}
-      <span>{children}</span>
-    </button>
+    <span
+      aria-label={`${provider} provider`}
+      className={cn("size-2 rounded-full", pulse && "animate-status-pulse")}
+      style={{
+        backgroundColor:
+          providerColors[provider.toLowerCase()] ?? "var(--ink-faint)",
+      }}
+    />
   );
 }
-
-/* ─── 2. PROVIDER BADGE COMPONENT ────────────────────────── */
-export type ProviderName = 'groq' | 'gemini' | 'ollama' | string;
-
 export function DsProviderBadge({ provider }: { provider: ProviderName }) {
-  const normalized = provider.toLowerCase();
-
-  const styles: Record<string, string> = {
-    groq: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    gemini: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-    ollama: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-  };
-
-  const styleClass = styles[normalized] || 'bg-slate-500/10 text-slate-300 border-slate-500/30';
-
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-semibold border ${styleClass}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${normalized === 'groq' ? 'bg-amber-400' : normalized === 'gemini' ? 'bg-blue-400' : 'bg-emerald-400'}`} />
+    <span className="inline-flex items-center gap-2 rounded-md border border-[var(--border-hairline)] bg-[var(--surface-sunken)] px-2 py-1 text-xs font-medium text-[var(--ink)]">
+      <ProviderDot provider={provider} />
       {provider}
     </span>
   );
 }
-
-/* ─── 3. STATUS BADGE COMPONENT ──────────────────────────── */
-export type ExecutionStatus = 'success' | 'fallback' | 'error' | string;
-
+export type ExecutionStatus = "success" | "fallback" | "error" | string;
 export function DsStatusBadge({ status }: { status: ExecutionStatus }) {
   const normalized = status.toLowerCase();
-
-  const styles: Record<string, string> = {
-    success: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-    fallback: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    error: 'bg-red-500/10 text-red-400 border-red-500/30',
-  };
-
-  const styleClass = styles[normalized] || 'bg-slate-500/10 text-slate-300 border-slate-500/30';
-
+  const tone =
+    normalized === "success"
+      ? "bg-[var(--success-soft)] text-[var(--success)]"
+      : normalized === "fallback"
+        ? "bg-[var(--warning-soft)] text-[var(--warning)]"
+        : normalized === "error"
+          ? "bg-[var(--danger-soft)] text-[var(--danger)]"
+          : "bg-[var(--surface-sunken)] text-[var(--ink-muted)]";
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border ${styleClass}`}>
+    <span
+      className={cn(
+        "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium",
+        tone,
+      )}
+    >
       {status}
     </span>
   );
 }
-
-/* ─── 4. INTENT BADGE COMPONENT ──────────────────────────── */
 export function DsIntentBadge({ intent }: { intent: string }) {
-  const styles: Record<string, string> = {
-    code_generation: 'bg-purple-500/10 text-purple-300 border-purple-500/30',
-    summarization: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
-    extraction: 'bg-pink-500/10 text-pink-300 border-pink-500/30',
-    creative_writing: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-    reasoning: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-    simple_qa: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30',
-    translation: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
-    general: 'bg-slate-500/10 text-slate-300 border-slate-500/30',
-  };
-
-  const styleClass = styles[intent] || 'bg-slate-500/10 text-slate-300 border-slate-500/30';
-
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-medium border ${styleClass}`}>
+    <span className="inline-flex rounded-md bg-[var(--accent-soft)] px-2 py-1 font-mono text-xs text-[var(--accent-hover)]">
       {intent}
     </span>
   );
 }
 
-/* ─── 5. CARD COMPONENT ──────────────────────────────────── */
+export interface DsButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "secondary" | "destructive" | "ghost";
+  size?: "sm" | "md" | "lg";
+  isLoading?: boolean;
+  icon?: React.ReactNode;
+}
+export function DsButton({
+  children,
+  variant = "primary",
+  size = "md",
+  isLoading = false,
+  icon,
+  className,
+  disabled,
+  ...props
+}: DsButtonProps) {
+  const variants = {
+    primary:
+      "bg-[var(--accent)] text-white shadow-[var(--shadow-rest)] hover:bg-[var(--accent-hover)] hover:shadow-[var(--shadow-raised)]",
+    secondary:
+      "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--surface-sunken)]",
+    destructive:
+      "bg-[var(--danger-soft)] text-[var(--danger)] hover:bg-[var(--danger)] hover:text-white",
+    ghost:
+      "text-[var(--ink-muted)] hover:bg-[var(--surface-sunken)] hover:text-[var(--ink)]",
+  };
+  const sizes = {
+    sm: "h-8 px-3 text-xs",
+    md: "h-10 px-4 text-sm",
+    lg: "h-12 px-5 text-sm",
+  };
+  return (
+    <button
+      className={cn(
+        "inline-flex items-center justify-center gap-2 rounded-[var(--radius-2)] font-medium transition-[background-color,box-shadow,color,transform] duration-[var(--duration-base)] active:translate-y-px disabled:pointer-events-none disabled:opacity-45",
+        variants[variant],
+        sizes[size],
+        className,
+      )}
+      disabled={disabled || isLoading}
+      {...props}
+    >
+      {isLoading ? <LoaderCircle className="size-4 animate-spin" /> : icon}
+      <span>{children}</span>
+    </button>
+  );
+}
+
 export interface DsCardProps {
   children: React.ReactNode;
   title?: React.ReactNode;
@@ -126,88 +123,77 @@ export interface DsCardProps {
   className?: string;
   isHero?: boolean;
 }
-
 export function DsCard({
   children,
   title,
   subtitle,
   headerAction,
-  className = '',
+  className,
   isHero = false,
 }: DsCardProps) {
   return (
-    <div
-      className={`rounded-2xl border bg-[#11131f] backdrop-blur-xl shadow-xl shadow-black/40 transition-all duration-200 ${
-        isHero
-          ? 'border-indigo-500/40 bg-gradient-to-br from-indigo-950/30 via-[#11131f] to-purple-950/20 shadow-indigo-500/10'
-          : 'border-white/10 hover:border-white/20'
-      } ${className}`}
+    <section
+      className={cn(
+        "rounded-[var(--radius-3)] border border-[var(--border-hairline)] bg-[var(--surface)] shadow-[var(--shadow-rest)]",
+        isHero &&
+          "border-[var(--accent-soft-strong)] shadow-[var(--shadow-raised)]",
+        className,
+      )}
     >
       {(title || subtitle || headerAction) && (
-        <div className="px-6 py-4.5 border-b border-white/10 flex items-center justify-between gap-4">
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--border-hairline)] px-5 py-4">
           <div>
-            {title && <h3 className="text-sm font-bold text-slate-100 tracking-tight">{title}</h3>}
-            {subtitle && <p className="text-xs text-slate-400 font-mono mt-0.5">{subtitle}</p>}
+            {title && (
+              <h3 className="text-sm font-semibold text-[var(--ink)]">
+                {title}
+              </h3>
+            )}
+            {subtitle && (
+              <p className="mt-1 text-xs text-[var(--ink-muted)]">{subtitle}</p>
+            )}
           </div>
-          {headerAction && <div>{headerAction}</div>}
-        </div>
+          {headerAction}
+        </header>
       )}
-      <div className="p-6">{children}</div>
-    </div>
+      <div className="p-5">{children}</div>
+    </section>
   );
 }
-
-/* ─── 6. METRIC CARD COMPONENT ───────────────────────────── */
-export interface DsMetricCardProps {
+export function DsMetricCard({
+  label,
+  value,
+  subtext,
+  icon,
+  trend,
+}: {
   label: string;
   value: React.ReactNode;
   subtext?: string;
   icon?: React.ReactNode;
   isHero?: boolean;
   trend?: string;
-}
-
-export function DsMetricCard({
-  label,
-  value,
-  subtext,
-  icon,
-  isHero = false,
-  trend,
-}: DsMetricCardProps) {
+}) {
   return (
-    <div
-      className={`p-6 rounded-2xl border backdrop-blur-xl transition-all duration-200 ${
-        isHero
-          ? 'bg-gradient-to-br from-indigo-950/50 via-[#11131f] to-purple-950/30 border-indigo-500/50 shadow-2xl shadow-indigo-500/15'
-          : 'bg-[#11131f] border-white/10 hover:border-white/20 shadow-xl shadow-black/30'
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
-          {label}
-        </span>
-        {icon && <span className={`${isHero ? 'text-indigo-400' : 'text-slate-400'}`}>{icon}</span>}
+    <div className="rounded-[var(--radius-3)] border border-[var(--border-hairline)] bg-[var(--surface)] p-5 shadow-[var(--shadow-rest)]">
+      <div className="flex items-center justify-between text-xs text-[var(--ink-muted)]">
+        <span>{label}</span>
+        {icon}
       </div>
-
-      <div className={`font-mono font-extrabold tracking-tight mt-3 ${isHero ? 'text-4xl text-emerald-400' : 'text-3xl text-white'}`}>
+      <div className="mt-3 font-mono text-2xl font-semibold tabular-nums text-[var(--ink)]">
         {value}
       </div>
-
-      {(subtext || trend) && (
-        <div className="flex items-center gap-2 mt-2 text-xs font-mono text-slate-400">
-          {trend && <span className="text-emerald-400 font-semibold">{trend}</span>}
-          {subtext && <span>{subtext}</span>}
+      {(trend || subtext) && (
+        <div className="mt-2 flex gap-2 text-xs text-[var(--ink-muted)]">
+          {trend && <span className="text-[var(--success)]">{trend}</span>}
+          {subtext}
         </div>
       )}
     </div>
   );
 }
-
-/* ─── 7. EMPTY STATE COMPONENT ────────────────────────────── */
 export function DsEmptyState({
-  title = 'No Execution Active',
-  description = 'Select a sample workload preset or enter a prompt to evaluate routing diagnostics.',
+  title = "Nothing here yet",
+  description = "Run a route to see the first result.",
   icon,
 }: {
   title?: string;
@@ -215,14 +201,113 @@ export function DsEmptyState({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="p-12 rounded-2xl border border-dashed border-white/10 bg-white/[0.01] text-center space-y-3">
-      <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
-        {icon || <Sparkles className="w-6 h-6" />}
+    <div className="rounded-[var(--radius-3)] border border-[var(--border-hairline)] bg-[var(--surface)] px-6 py-12 text-center">
+      <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+        {icon ?? <Sparkles className="size-5" />}
       </div>
-      <h4 className="text-sm font-bold text-slate-200">{title}</h4>
-      <p className="text-xs text-slate-400 font-mono max-w-sm mx-auto leading-relaxed">
+      <h4 className="mt-4 text-sm font-semibold">{title}</h4>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-[var(--ink-muted)]">
         {description}
       </p>
+    </div>
+  );
+}
+export function Chip({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-md border border-[var(--border-hairline)] bg-[var(--surface-sunken)] px-2 py-1 text-xs text-[var(--ink-muted)]",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+export function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded border border-[var(--border-strong)] bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--ink-faint)]">
+      {children}
+    </kbd>
+  );
+}
+export function Skeleton({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "skeleton-shimmer block rounded-[var(--radius-1)]",
+        className,
+      )}
+      aria-hidden="true"
+    />
+  );
+}
+export function PageHeader({
+  title,
+  description,
+  eyebrow,
+  action,
+}: {
+  title: string;
+  description: string;
+  eyebrow?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border-hairline)] px-4 py-5 sm:px-8">
+      <div>
+        {eyebrow && (
+          <p className="mb-1 text-xs font-medium text-[var(--accent)]">
+            {eyebrow}
+          </p>
+        )}
+        <h1 className="text-2xl font-semibold tracking-tight text-[var(--ink)]">
+          {title}
+        </h1>
+        <p className="mt-1 max-w-2xl text-sm text-[var(--ink-muted)]">
+          {description}
+        </p>
+      </div>
+      {action}
+    </header>
+  );
+}
+export function SegmentedControl({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ value: string; label: string }>;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div
+      className="inline-flex rounded-[var(--radius-2)] bg-[var(--surface-sunken)] p-1"
+      role="group"
+    >
+      {options.map((option) => (
+        <button
+          type="button"
+          key={option.value}
+          onClick={() => onChange(option.value)}
+          className={cn(
+            "rounded-[var(--radius-1)] px-3 py-1.5 text-xs transition-colors",
+            value === option.value
+              ? "bg-[var(--surface)] font-medium text-[var(--ink)] shadow-[var(--shadow-rest)]"
+              : "text-[var(--ink-muted)] hover:text-[var(--ink)]",
+          )}
+          aria-pressed={value === option.value}
+        >
+          {option.label}
+        </button>
+      ))}
     </div>
   );
 }

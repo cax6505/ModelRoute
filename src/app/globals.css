@@ -1,152 +1,175 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: "Fira Code", monospace;
+  --color-background: var(--canvas);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--accent);
+  --color-primary-foreground: #fff;
+  --color-secondary: var(--surface-sunken);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-sunken);
+  --color-muted-foreground: var(--ink-muted);
+  --color-accent: var(--accent-soft);
+  --color-accent-foreground: var(--ink);
+  --color-border: var(--border-hairline);
+  --color-input: var(--border-strong);
+  --color-ring: var(--accent);
+  --color-destructive: var(--danger);
+  --font-sans: var(--font-geist);
+  --font-display: var(--font-bricolage);
+  --font-mono: var(--font-geist-mono);
+  --radius-sm: var(--radius-1);
+  --radius-md: var(--radius-2);
+  --radius-lg: var(--radius-3);
+  --radius-xl: var(--radius-4);
 }
 
 :root {
-  /* ── Level 0-3 Depth Elevation System ── */
-  --bg-canvas: #07080e;        /* Level 0: Main app background */
-  --bg-sidebar: #0c0d15;       /* Level 1: Sidebar & Header */
-  --bg-surface: #11131f;       /* Level 2: Cards, Panels, Rows */
-  --bg-surface-hover: #161829; /* Level 2 Hover */
-  --bg-elevated: #1a1c2e;      /* Level 3: Dropdowns, Modals, Popovers */
-
-  --foreground: #f8fafc;
-  --foreground-muted: #94a3b8;
-  --foreground-subtle: #64748b;
-
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(99, 102, 241, 0.35);
-  --border-accent: rgba(139, 92, 246, 0.4);
-
-  /* Provider Colors - Used systematically across the entire app */
-  --provider-groq-bg: rgba(249, 115, 22, 0.12);
-  --provider-groq-text: #fb923c;
-  --provider-groq-border: rgba(249, 115, 22, 0.35);
-
-  --provider-gemini-bg: rgba(59, 130, 246, 0.12);
-  --provider-gemini-text: #60a5fa;
-  --provider-gemini-border: rgba(59, 130, 246, 0.35);
-
-  --provider-ollama-bg: rgba(16, 185, 129, 0.12);
-  --provider-ollama-text: #34d399;
-  --provider-ollama-border: rgba(16, 185, 129, 0.35);
-
-  /* Primary Action Color - Reserved specifically for actions/active state */
-  --action-primary: #6366f1;
-  --action-primary-hover: #4f46e5;
-  --action-primary-glow: rgba(99, 102, 241, 0.25);
-
-  /* Status Colors */
-  --status-success-bg: rgba(16, 185, 129, 0.12);
-  --status-success-text: #34d399;
-  --status-success-border: rgba(16, 185, 129, 0.3);
-
-  --status-fallback-bg: rgba(245, 158, 11, 0.12);
-  --status-fallback-text: #fbbf24;
-  --status-fallback-border: rgba(245, 158, 11, 0.3);
-
-  --status-error-bg: rgba(239, 68, 68, 0.12);
-  --status-error-text: #f87171;
-  --status-error-border: rgba(239, 68, 68, 0.3);
+  --canvas: #f6f4ef;
+  --surface: #ffffff;
+  --surface-sunken: #efebe4;
+  --ink: #16130f;
+  --ink-muted: #5e5a52;
+  --ink-faint: #9a958b;
+  --border-hairline: rgba(22, 19, 15, 0.08);
+  --border-strong: rgba(22, 19, 15, 0.14);
+  --accent: #ff4a1c;
+  --accent-hover: #df3b12;
+  --accent-soft: #fff0eb;
+  --accent-soft-strong: #ffdcd2;
+  --groq: #2f54eb;
+  --gemini: #0e9f8e;
+  --ollama: #d98a0b;
+  --success: #14803c;
+  --success-soft: #eaf6ee;
+  --warning: #b54708;
+  --warning-soft: #fef0df;
+  --danger: #d92d20;
+  --danger-soft: #fcebea;
+  --radius-1: 8px;
+  --radius-2: 12px;
+  --radius-3: 16px;
+  --radius-4: 24px;
+  --shadow-rest:
+    0 1px 2px rgba(91, 66, 40, 0.04), 0 4px 12px rgba(91, 66, 40, 0.03);
+  --shadow-raised:
+    0 2px 4px rgba(91, 66, 40, 0.05), 0 12px 28px rgba(91, 66, 40, 0.07);
+  --shadow-floating:
+    0 8px 12px rgba(91, 66, 40, 0.06), 0 24px 56px rgba(91, 66, 40, 0.12);
+  --motion-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-micro: 120ms;
+  --duration-base: 220ms;
+  --duration-page: 420ms;
 }
 
+[data-theme="dark"] {
+  --canvas: #171613;
+  --surface: #211f1b;
+  --surface-sunken: #2b2823;
+  --ink: #f6f4ef;
+  --ink-muted: #c4bfb5;
+  --ink-faint: #8c877e;
+  --border-hairline: rgba(246, 244, 239, 0.1);
+  --border-strong: rgba(246, 244, 239, 0.17);
+  --accent-soft: #472017;
+  --accent-soft-strong: #693021;
+}
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
-
+html {
+  background: var(--canvas);
+}
 body {
-  background: var(--bg-canvas);
-  color: var(--foreground);
-  font-family: var(--font-sans);
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-geist), sans-serif;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
-
-/* Background Texture Pattern */
-.bg-canvas-pattern {
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.06) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
-
-/* Custom Scrollbar */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+code,
+pre,
+.font-mono {
+  font-family: var(--font-geist-mono), monospace;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-bricolage), sans-serif;
+  letter-spacing: -0.02em;
+}
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 9999px;
+  background: var(--border-strong);
+  border-radius: 999px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.86);
+  }
 }
-
-/* Monospace fonts for data/code */
-code, pre, .font-mono {
-  font-family: var(--font-mono);
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
-
-/* Glassmorphism & Glowing Utilities */
-.glass-panel {
-  background: rgba(17, 19, 31, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.animate-status-pulse {
+  animation: status-pulse 2.4s var(--motion-standard) infinite;
 }
-
-.glass-panel-hover {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-sunken) 25%,
+    var(--surface) 50%,
+    var(--surface-sunken) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s var(--motion-standard) infinite;
 }
-.glass-panel-hover:hover {
-  background: rgba(22, 24, 41, 0.85);
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.15);
-}
-
-.glow-indigo {
-  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
-}
-
-.glow-amber {
-  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.3);
-}
-
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.65; transform: scale(0.97); }
-}
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 2.5s ease-in-out infinite;
-}
-
-@keyframes flow-line {
-  0% { stroke-dashoffset: 24; }
-  100% { stroke-dashoffset: 0; }
-}
-
-.animate-flow {
-  stroke-dasharray: 6 6;
-  animation: flow-line 1.2s linear infinite;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

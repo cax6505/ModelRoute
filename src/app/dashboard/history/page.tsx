@@ -1,20 +1,12 @@
-'use client';
-
-import React, { useState } from 'react';
+"use client";
+import { useState } from "react";
+import { Download, Search } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Filter, History as HistoryIcon } from 'lucide-react';
-import {
+  DsEmptyState,
+  DsIntentBadge,
   DsProviderBadge,
   DsStatusBadge,
-  DsIntentBadge,
-} from '@/components/design-system';
-
+} from "@/components/design-system";
 interface RequestLog {
   id: string;
   created_at: string;
@@ -28,218 +20,201 @@ interface RequestLog {
   status: string;
   routing_reason: string;
   priority: string;
-  prompt_length: number;
   correlation_id: string;
 }
-
-const DEMO_LOGS: RequestLog[] = [
+const logs: RequestLog[] = [
   {
-    id: '1', created_at: new Date(Date.now() - 60000).toISOString(),
-    task_type: 'code_generation', provider: 'groq', model: 'llama-3.3-70b-versatile',
-    latency_ms: 1234, input_tokens: 156, output_tokens: 892, estimated_cost_usd: 0.000795,
-    status: 'success', routing_reason: 'task_type=code_generation, priority=quality, top_candidate=groq/openai/gpt-oss-120b',
-    priority: 'quality', prompt_length: 89, correlation_id: 'mr_abc123',
+    id: "1",
+    created_at: "2026-09-30T07:20:00Z",
+    task_type: "code_generation",
+    provider: "groq",
+    model: "openai/gpt-oss-120b",
+    latency_ms: 1234,
+    input_tokens: 156,
+    output_tokens: 892,
+    estimated_cost_usd: 0.000795,
+    status: "success",
+    routing_reason: "Highest weight for quality code generation.",
+    priority: "quality",
+    correlation_id: "mr_abc123",
   },
   {
-    id: '2', created_at: new Date(Date.now() - 120000).toISOString(),
-    task_type: 'simple_qa', provider: 'groq', model: 'openai/gpt-oss-20b',
-    latency_ms: 287, input_tokens: 42, output_tokens: 128, estimated_cost_usd: 0.000012,
-    status: 'success', routing_reason: 'task_type=simple_qa, priority=fast, top_candidate=groq/openai/gpt-oss-20b',
-    priority: 'fast', prompt_length: 38, correlation_id: 'mr_def456',
+    id: "2",
+    created_at: "2026-09-30T07:18:00Z",
+    task_type: "simple_qa",
+    provider: "groq",
+    model: "openai/gpt-oss-20b",
+    latency_ms: 287,
+    input_tokens: 42,
+    output_tokens: 128,
+    estimated_cost_usd: 0.000012,
+    status: "success",
+    routing_reason: "Fast priority selected the top candidate.",
+    priority: "fast",
+    correlation_id: "mr_def456",
   },
   {
-    id: '3', created_at: new Date(Date.now() - 300000).toISOString(),
-    task_type: 'summarization', provider: 'gemini', model: 'gemini-3.5-flash',
-    latency_ms: 2150, input_tokens: 1200, output_tokens: 340, estimated_cost_usd: 0.000256,
-    status: 'success', routing_reason: 'task_type=summarization, priority=quality, top_candidate=gemini/gemini-3.5-flash',
-    priority: 'quality', prompt_length: 4200, correlation_id: 'mr_ghi789',
-  },
-  {
-    id: '4', created_at: new Date(Date.now() - 600000).toISOString(),
-    task_type: 'translation', provider: 'gemini', model: 'gemini-3.5-flash',
-    latency_ms: 1800, input_tokens: 87, output_tokens: 95, estimated_cost_usd: 0.000047,
-    status: 'fallback', routing_reason: 'Fallback: groq rate-limit reached (429), executed via gemini',
-    priority: 'quality', prompt_length: 62, correlation_id: 'mr_jkl012',
-  },
-  {
-    id: '5', created_at: new Date(Date.now() - 900000).toISOString(),
-    task_type: 'reasoning', provider: 'ollama', model: 'llama3.2',
-    latency_ms: 4500, input_tokens: 210, output_tokens: 680, estimated_cost_usd: 0,
-    status: 'success', routing_reason: 'task_type=reasoning, priority=cheap, top_candidate=ollama/llama3.2',
-    priority: 'cheap', prompt_length: 156, correlation_id: 'mr_mno345',
+    id: "3",
+    created_at: "2026-09-30T07:15:00Z",
+    task_type: "translation",
+    provider: "gemini",
+    model: "gemini-3.5-flash",
+    latency_ms: 1800,
+    input_tokens: 87,
+    output_tokens: 95,
+    estimated_cost_usd: 0.000047,
+    status: "fallback",
+    routing_reason: "Groq rate limit reached; fallback executed via Gemini.",
+    priority: "quality",
+    correlation_id: "mr_jkl012",
   },
 ];
-
 export default function HistoryPage() {
-  const [logs] = useState<RequestLog[]>(DEMO_LOGS);
-  const [filterTask, setFilterTask] = useState<string>('all');
-  const [filterProvider, setFilterProvider] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
-
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const filtered = logs.filter((log) => {
-    if (filterTask !== 'all' && log.task_type !== filterTask) return false;
-    if (filterProvider !== 'all' && log.provider !== filterProvider) return false;
-    if (filterStatus !== 'all' && log.status !== filterStatus) return false;
-    if (searchQuery.trim() && !log.routing_reason.toLowerCase().includes(searchQuery.toLowerCase()) && !log.model.toLowerCase().includes(searchQuery.toLowerCase()) && !log.correlation_id.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    return true;
-  });
-
-  const exportJSON = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(filtered, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `modelroute_audit_logs_${Date.now()}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+  const [query, setQuery] = useState("");
+  const [provider, setProvider] = useState("all");
+  const [selected, setSelected] = useState<RequestLog | null>(null);
+  const filtered = logs.filter(
+    (log) =>
+      (provider === "all" || log.provider === provider) &&
+      (!query ||
+        `${log.model} ${log.correlation_id} ${log.routing_reason}`
+          .toLowerCase()
+          .includes(query.toLowerCase())),
+  );
+  const exportLogs = () => {
+    const anchor = document.createElement("a");
+    anchor.href = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(filtered, null, 2))}`;
+    anchor.download = "modelroute-audit-logs.json";
+    anchor.click();
   };
-
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#07080e]">
-      {/* Console Header */}
-      <header className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-[#0c0d15] flex-shrink-0 flex-wrap gap-4">
-        <div>
-          <h1 className="text-lg font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <HistoryIcon className="w-5 h-5 text-indigo-400" />
-            Request Audit Logs
-          </h1>
-          <p className="text-xs text-slate-400 font-mono mt-0.5">
-            Inspect request metadata, classification tags, latency distributions, and policy resolution reasons.
-          </p>
+    <div className="space-y-5 p-4 sm:p-8">
+      <div className="flex flex-wrap justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <label className="flex h-9 items-center gap-2 rounded-[var(--radius-2)] border border-[var(--border-strong)] bg-[var(--surface)] px-3">
+            <Search className="size-4 text-[var(--ink-faint)]" />
+            <input
+              aria-label="Search audit logs"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search model or ID"
+              className="w-52 bg-transparent text-xs outline-none"
+            />
+          </label>
+          {["all", "groq", "gemini", "ollama"].map((item) => (
+            <button
+              type="button"
+              key={item}
+              onClick={() => setProvider(item)}
+              className={`rounded-[var(--radius-2)] px-3 py-2 text-xs capitalize ${provider === item ? "bg-[var(--ink)] text-[var(--surface)]" : "border border-[var(--border-hairline)] bg-[var(--surface)] text-[var(--ink-muted)]"}`}
+            >
+              {item === "all" ? "All providers" : item}
+            </button>
+          ))}
         </div>
-
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            placeholder="Search logs or correlation IDs..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 px-3 text-xs bg-white/5 border border-white/10 rounded-xl text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 w-[200px]"
-          />
-
-          <Filter className="w-4 h-4 text-slate-400" />
-          <Select value={filterTask} onValueChange={(val) => setFilterTask(val ?? 'all')}>
-            <SelectTrigger className="w-[145px] h-9 text-xs bg-white/5 border-white/10 text-slate-200">
-              <SelectValue placeholder="Task Intent" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
-              <SelectItem value="all">All Intent Types</SelectItem>
-              <SelectItem value="code_generation">Code Generation</SelectItem>
-              <SelectItem value="summarization">Summarization</SelectItem>
-              <SelectItem value="extraction">Extraction</SelectItem>
-              <SelectItem value="creative_writing">Creative</SelectItem>
-              <SelectItem value="reasoning">Reasoning</SelectItem>
-              <SelectItem value="simple_qa">Simple Q&A</SelectItem>
-              <SelectItem value="translation">Translation</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={filterProvider} onValueChange={(val) => setFilterProvider(val ?? 'all')}>
-            <SelectTrigger className="w-[130px] h-9 text-xs bg-white/5 border-white/10 text-slate-200">
-              <SelectValue placeholder="Provider" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#171929] border-white/10 text-slate-200">
-              <SelectItem value="all">All Providers</SelectItem>
-              <SelectItem value="groq">Groq</SelectItem>
-              <SelectItem value="gemini">Gemini</SelectItem>
-              <SelectItem value="ollama">Ollama</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <button
-            onClick={exportJSON}
-            className="h-9 px-3.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-mono font-semibold transition-all"
-          >
-            Export JSON
-          </button>
-        </div>
-      </header>
-
-      {/* Main Table View Area */}
-      <div className="flex-1 overflow-auto p-8 max-w-7xl mx-auto w-full">
-        <div className="rounded-2xl border border-white/10 bg-[#11131f] overflow-hidden shadow-xl shadow-black/40">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-white/10 bg-[#0c0d15] text-xs font-mono text-slate-400 uppercase tracking-wider">
-                <th className="py-4 px-6 text-left">Timestamp</th>
-                <th className="py-4 px-6 text-left">Classified Intent</th>
-                <th className="py-4 px-6 text-left">Assigned Provider & Model</th>
-                <th className="py-4 px-6 text-right">Latency</th>
-                <th className="py-4 px-6 text-right">Tokens (In → Out)</th>
-                <th className="py-4 px-6 text-right">Estimated Cost</th>
-                <th className="py-4 px-6 text-center">Execution Status</th>
+        <button
+          type="button"
+          onClick={exportLogs}
+          className="inline-flex items-center gap-2 rounded-[var(--radius-2)] border border-[var(--border-strong)] px-3 py-2 text-xs"
+        >
+          <Download className="size-4" />
+          Export JSON
+        </button>
+      </div>
+      <div className="overflow-hidden rounded-[var(--radius-3)] border border-[var(--border-hairline)] bg-[var(--surface)]">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left text-xs">
+            <thead className="border-b border-[var(--border-hairline)] bg-[var(--surface-sunken)] text-[var(--ink-muted)]">
+              <tr>
+                {[
+                  "Timestamp",
+                  "Intent",
+                  "Provider and model",
+                  "Latency",
+                  "Tokens",
+                  "Cost",
+                  "Status",
+                ].map((head) => (
+                  <th key={head} className="px-4 py-3 font-medium">
+                    {head}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-sm">
+            <tbody>
               {filtered.map((log) => (
-                <React.Fragment key={log.id}>
-                  <tr
-                    onClick={() => setExpandedRow(expandedRow === log.id ? null : log.id)}
-                    className="cursor-pointer hover:bg-white/[0.03] transition-colors"
-                  >
-                    <td className="py-4 px-6 font-mono text-xs text-slate-400 text-left">
-                      {new Date(log.created_at).toLocaleTimeString()}
-                    </td>
-                    <td className="py-4 px-6 text-left">
-                      <DsIntentBadge intent={log.task_type} />
-                    </td>
-                    <td className="py-4 px-6 text-left">
-                      <div className="flex items-center gap-2">
-                        <DsProviderBadge provider={log.provider} />
-                        <span className="font-mono text-xs text-slate-300 font-medium">
-                          {log.model}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 font-mono text-xs font-semibold text-white text-right">
-                      {log.latency_ms}ms
-                    </td>
-                    <td className="py-4 px-6 font-mono text-xs text-slate-400 text-right">
-                      {log.input_tokens} → {log.output_tokens}
-                    </td>
-                    <td className="py-4 px-6 font-mono text-xs text-emerald-400 font-semibold text-right">
-                      ${log.estimated_cost_usd.toFixed(6)}
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <DsStatusBadge status={log.status} />
-                    </td>
-                  </tr>
-                  {expandedRow === log.id && (
-                    <tr>
-                      <td colSpan={7} className="!bg-[#090a12] p-6 border-t border-white/5">
-                        <div className="space-y-2">
-                          <span className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-wider block">
-                            Policy Resolution Reason
-                          </span>
-                          <p className="text-xs font-mono text-slate-300 leading-relaxed">
-                            {log.routing_reason}
-                          </p>
-                          <div className="flex items-center gap-6 mt-3 text-xs font-mono text-slate-400">
-                            <span>Priority Mode: <span className="text-white font-semibold">{log.priority}</span></span>
-                            <span>Prompt Length: <span className="text-white font-semibold">{log.prompt_length} chars</span></span>
-                            <span>Correlation ID: <span className="text-slate-300">{log.correlation_id}</span></span>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
+                <tr
+                  key={log.id}
+                  onClick={() => setSelected(log)}
+                  className="cursor-pointer border-b border-[var(--border-hairline)] hover:bg-[var(--accent-soft)]"
+                >
+                  <td className="px-4 py-4 font-mono text-[var(--ink-muted)]">
+                    {new Date(log.created_at).toLocaleTimeString()}
+                  </td>
+                  <td className="px-4 py-4">
+                    <DsIntentBadge intent={log.task_type} />
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <DsProviderBadge provider={log.provider} />
+                      <span className="font-mono text-[var(--ink-muted)]">
+                        {log.model}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 font-mono">{log.latency_ms} ms</td>
+                  <td className="px-4 py-4 font-mono text-[var(--ink-muted)]">
+                    {log.input_tokens} → {log.output_tokens}
+                  </td>
+                  <td className="px-4 py-4 font-mono">
+                    ${log.estimated_cost_usd.toFixed(6)}
+                  </td>
+                  <td className="px-4 py-4">
+                    <DsStatusBadge status={log.status} />
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
-
-          {filtered.length === 0 && (
-            <div className="p-12 text-center text-sm font-mono text-slate-500">
-              No request audit logs match the selected filter criteria.
-            </div>
-          )}
         </div>
+        {!filtered.length && (
+          <DsEmptyState
+            title="No matching requests"
+            description="Adjust the search or provider filter."
+          />
+        )}
       </div>
+      {selected && (
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-[rgba(22,19,15,.18)]"
+          onClick={() => setSelected(null)}
+        >
+          <aside
+            className="h-full w-full max-w-md border-l border-[var(--border-hairline)] bg-[var(--surface)] p-6 shadow-[var(--shadow-floating)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-xs text-[var(--ink-muted)]">Routing decision</p>
+            <h2 className="mt-1 text-xl font-semibold">
+              {selected.correlation_id}
+            </h2>
+            <div className="mt-8 space-y-5 text-sm">
+              <p className="border-l-2 border-[var(--accent)] pl-4">
+                Classified as <strong>{selected.task_type}</strong>
+              </p>
+              <p className="border-l-2 border-[var(--gemini)] pl-4">
+                Selected <strong>{selected.provider}</strong>
+                <br />
+                <span className="font-mono text-xs text-[var(--ink-muted)]">
+                  {selected.model}
+                </span>
+              </p>
+              <p className="rounded-[var(--radius-2)] bg-[var(--surface-sunken)] p-4 text-xs leading-6 text-[var(--ink-muted)]">
+                {selected.routing_reason}
+              </p>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
