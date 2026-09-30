@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BarChart3,
@@ -9,14 +9,16 @@ import {
   History,
   Key,
   Menu,
-  PanelLeftClose,
+  Moon,
   Sliders,
+  Sun,
   Terminal,
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
-import { Chip, Kbd, PageHeader, ProviderDot } from "@/components/design-system";
+import { startTransition } from "react";
+import { useEffect, useState } from "react";
+import { Kbd, PageHeader, ProviderDot } from "@/components/design-system";
 import { motionDuration, motionEasing, motionSpring } from "@/lib/motion";
 
 const navItems = [
@@ -63,10 +65,10 @@ const navItems = [
     description: "Manage gateway access keys.",
   },
 ];
-const providers = [
-  { name: "groq", latency: "210 ms" },
-  { name: "gemini", latency: "450 ms" },
-  { name: "ollama", latency: "Ready" },
+const defaultProviders = [
+  { name: "groq", latency: "210 ms", state: "Healthy" },
+  { name: "gemini", latency: "450 ms", state: "Healthy" },
+  { name: "ollama", latency: "Ready", state: "Healthy" },
 ];
 
 export default function DashboardLayout({
@@ -75,7 +77,47 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [providers, setProviders] = useState(defaultProviders);
+  const [breakerState, setBreakerState] = useState("CLOSED");
+  useEffect(() => {
+    void fetch("/api/health")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { providers?: Array<{ name: string; available: boolean; latencyMs: number | null; circuitState: string }> } | null) => {
+        if (!payload?.providers?.length) return;
+        setProviders(payload.providers.map((provider) => ({ name: provider.name, latency: provider.available ? provider.latencyMs === null ? "Ready" : `${provider.latencyMs} ms` : "Down", state: provider.available ? "Healthy" : "Degraded" })));
+        setBreakerState(payload.providers.some((provider) => provider.circuitState === "OPEN") ? "OPEN" : payload.providers.some((provider) => provider.circuitState === "HALF_OPEN") ? "HALF_OPEN" : "CLOSED");
+      })
+      .catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    const saved = window.localStorage.getItem("modelroute-theme");
+    const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+    const nextTheme = saved === "dark" || saved === "light" ? saved : preferred;
+    startTransition(() => setTheme(nextTheme));
+    document.documentElement.dataset.theme = nextTheme;
+  }, []);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.metaKey && !event.ctrlKey) return;
+      const item = navItems[Number(event.key) - 1];
+      if (!item) return;
+      event.preventDefault();
+      router.push(item.href);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [router]);
+  const toggleTheme = () => {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+    document.documentElement.dataset.theme = nextTheme;
+    window.localStorage.setItem("modelroute-theme", nextTheme);
+  };
   const active =
     navItems.find(
       (item) =>
@@ -128,7 +170,7 @@ export default function DashboardLayout({
                 key={item.href}
                 href={item.href}
                 onClick={() => setDrawerOpen(false)}
-                className="group relative flex items-center justify-between rounded-[var(--radius-2)] px-3 py-2.5 text-sm transition-colors hover:bg-[var(--surface-sunken)]"
+                className="group relative isolate flex min-h-11 items-center justify-between overflow-hidden rounded-[var(--radius-2)] px-3 py-2.5 text-sm transition-colors hover:bg-[var(--surface-sunken)]"
               >
                 <span className="relative z-10 flex items-center gap-3">
                   <item.icon
@@ -154,7 +196,7 @@ export default function DashboardLayout({
                 {isActive && (
                   <motion.span
                     layoutId="active-nav"
-                    className="absolute inset-0 rounded-[var(--radius-2)] bg-[var(--accent-soft)]"
+                    className="pointer-events-none absolute inset-0 -z-0 rounded-[var(--radius-2)] bg-[var(--accent-soft)]"
                     transition={{ type: "spring", ...motionSpring.ui }}
                   />
                 )}
@@ -168,7 +210,7 @@ export default function DashboardLayout({
               <Activity className="size-3.5 text-[var(--success)]" />
               Infrastructure
             </span>
-            <span className="text-[var(--success)]">Healthy</span>
+            <span className={providers.some((provider) => provider.state === "Degraded") ? "text-[var(--danger)]" : "text-[var(--success)]"}>{providers.some((provider) => provider.state === "Degraded") ? "Degraded" : "Healthy"}</span>
           </div>
           <div className="space-y-1.5">
             {providers.map((provider) => (
@@ -180,7 +222,7 @@ export default function DashboardLayout({
                   <ProviderDot provider={provider.name} pulse />
                   {provider.name}
                 </span>
-                <span className="font-mono tabular-nums text-[var(--ink-muted)]">
+                <span className={provider.state === "Degraded" ? "font-mono tabular-nums text-[var(--danger)]" : "font-mono tabular-nums text-[var(--ink-muted)]"}>
                   {provider.latency}
                 </span>
               </div>
@@ -189,18 +231,26 @@ export default function DashboardLayout({
         </div>
       </aside>
       <main className="min-w-0 flex-1">
-        <div className="flex h-14 items-center justify-between border-b border-[var(--border-hairline)] bg-[var(--surface)] px-4 sm:px-8">
-          <div className="flex items-center gap-2 text-xs text-[var(--ink-muted)]">
-            <PanelLeftClose className="hidden size-4 sm:block" />
-            <span>Workspace</span>
-            <span className="text-[var(--ink-faint)]">/</span>
-            <span className="text-[var(--ink)]">{active.label}</span>
+        <div className="flex min-h-16 items-center justify-between gap-4 border-b border-[var(--border-hairline)] bg-[var(--surface)] px-4 sm:px-8">
+          <div className="flex min-w-0 items-center gap-2.5 pl-11 text-sm sm:pl-0">
+            <span className="hidden shrink-0 text-[var(--ink-faint)] sm:inline">Workspace</span>
+            <span aria-hidden="true" className="hidden text-[var(--border-strong)] sm:inline">/</span>
+            <span className="truncate font-medium text-[var(--ink)]">{active.label}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Chip>POST /api/route</Chip>
-            <span className="hidden items-center gap-1.5 rounded-md bg-[var(--success-soft)] px-2 py-1 text-xs font-medium text-[var(--success)] sm:inline-flex">
-              <span className="size-1.5 rounded-full bg-[var(--success)]" />
-              CLOSED
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+              title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+              className="inline-flex size-9 items-center justify-center rounded-[var(--radius-2)] border border-[var(--border-hairline)] bg-[var(--surface)] text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--ink)]"
+            >
+              {theme === "light" ? <Moon className="size-4" /> : <Sun className="size-4" />}
+            </button>
+            <span className="hidden h-9 items-center gap-2 rounded-[var(--radius-2)] border border-[var(--success)]/15 bg-[var(--success-soft)] px-3 text-xs font-medium text-[var(--success)] sm:inline-flex">
+              <span className="size-2 rounded-full bg-[var(--success)]" />
+              <span className="text-[var(--ink-muted)]">Circuit</span>
+              <span>{breakerState.replace("_", " ")}</span>
             </span>
           </div>
         </div>

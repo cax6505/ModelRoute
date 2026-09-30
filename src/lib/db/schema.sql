@@ -21,10 +21,12 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
 CREATE POLICY "Users can view their own profile"
   ON public.profiles FOR SELECT
   USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = id);
@@ -39,7 +41,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
@@ -59,20 +62,23 @@ CREATE TABLE IF NOT EXISTS public.api_keys (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_api_keys_key_prefix ON public.api_keys(key_prefix);
-CREATE INDEX idx_api_keys_key_hash ON public.api_keys(key_hash);
-CREATE INDEX idx_api_keys_user_id ON public.api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_key_prefix ON public.api_keys(key_prefix);
+CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON public.api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON public.api_keys(user_id);
 
 ALTER TABLE public.api_keys ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own API keys" ON public.api_keys;
 CREATE POLICY "Users can view their own API keys"
   ON public.api_keys FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can create their own API keys" ON public.api_keys;
 CREATE POLICY "Users can create their own API keys"
   ON public.api_keys FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own API keys" ON public.api_keys;
 CREATE POLICY "Users can update their own API keys"
   ON public.api_keys FOR UPDATE
   USING (auth.uid() = user_id);
@@ -88,6 +94,7 @@ CREATE TABLE IF NOT EXISTS public.request_logs (
   prompt_length INTEGER NOT NULL,
   prompt_text TEXT,           -- NULL unless user opted in
   response_text TEXT,         -- NULL unless user opted in
+  idempotency_response JSONB,  -- response metadata required for safe replay
   task_type TEXT NOT NULL,
   classifier_mode TEXT NOT NULL,
   provider TEXT NOT NULL,
@@ -104,19 +111,24 @@ CREATE TABLE IF NOT EXISTS public.request_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_request_logs_user_id ON public.request_logs(user_id);
-CREATE INDEX idx_request_logs_created_at ON public.request_logs(created_at DESC);
-CREATE INDEX idx_request_logs_task_type ON public.request_logs(task_type);
-CREATE INDEX idx_request_logs_provider ON public.request_logs(provider);
-CREATE INDEX idx_request_logs_idempotency ON public.request_logs(idempotency_key) WHERE idempotency_key IS NOT NULL;
-CREATE INDEX idx_request_logs_correlation ON public.request_logs(correlation_id);
+-- Local development requests may be anonymous; production route handlers still require auth.
+ALTER TABLE public.request_logs ALTER COLUMN user_id DROP NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_request_logs_user_id ON public.request_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_request_logs_created_at ON public.request_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_request_logs_task_type ON public.request_logs(task_type);
+CREATE INDEX IF NOT EXISTS idx_request_logs_provider ON public.request_logs(provider);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_request_logs_idempotency ON public.request_logs(user_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_request_logs_correlation ON public.request_logs(correlation_id);
 
 ALTER TABLE public.request_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own request logs" ON public.request_logs;
 CREATE POLICY "Users can view their own request logs"
   ON public.request_logs FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can insert request logs" ON public.request_logs;
 CREATE POLICY "Service role can insert request logs"
   ON public.request_logs FOR INSERT
   WITH CHECK (TRUE);
@@ -136,11 +148,13 @@ CREATE TABLE IF NOT EXISTS public.routing_rules (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_routing_rules_user_task ON public.routing_rules(user_id, task_type, priority_mode);
+CREATE INDEX IF NOT EXISTS idx_routing_rules_user_task ON public.routing_rules(user_id, task_type, priority_mode);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_routing_rules_user_task_unique ON public.routing_rules(user_id, task_type, priority_mode);
 
 ALTER TABLE public.routing_rules ENABLE ROW LEVEL SECURITY;
 
 -- System defaults (user_id IS NULL) are readable by all authenticated users
+DROP POLICY IF EXISTS "Authenticated users can view system routing rules" ON public.routing_rules;
 CREATE POLICY "Authenticated users can view system routing rules"
   ON public.routing_rules FOR SELECT
   USING (
@@ -148,14 +162,17 @@ CREATE POLICY "Authenticated users can view system routing rules"
     OR auth.uid() = user_id
   );
 
+DROP POLICY IF EXISTS "Users can create their own routing rules" ON public.routing_rules;
 CREATE POLICY "Users can create their own routing rules"
   ON public.routing_rules FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own routing rules" ON public.routing_rules;
 CREATE POLICY "Users can update their own routing rules"
   ON public.routing_rules FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own routing rules" ON public.routing_rules;
 CREATE POLICY "Users can delete their own routing rules"
   ON public.routing_rules FOR DELETE
   USING (auth.uid() = user_id);
@@ -175,6 +192,7 @@ CREATE TABLE IF NOT EXISTS public.eval_benchmarks (
 ALTER TABLE public.eval_benchmarks ENABLE ROW LEVEL SECURITY;
 
 -- Benchmarks are readable by all authenticated users
+DROP POLICY IF EXISTS "Authenticated users can view benchmarks" ON public.eval_benchmarks;
 CREATE POLICY "Authenticated users can view benchmarks"
   ON public.eval_benchmarks FOR SELECT
   USING (auth.role() = 'authenticated');
@@ -195,18 +213,21 @@ CREATE TABLE IF NOT EXISTS public.eval_runs (
   completed_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_eval_runs_user_id ON public.eval_runs(user_id);
+CREATE INDEX IF NOT EXISTS idx_eval_runs_user_id ON public.eval_runs(user_id);
 
 ALTER TABLE public.eval_runs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own eval runs" ON public.eval_runs;
 CREATE POLICY "Users can view their own eval runs"
   ON public.eval_runs FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can create their own eval runs" ON public.eval_runs;
 CREATE POLICY "Users can create their own eval runs"
   ON public.eval_runs FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own eval runs" ON public.eval_runs;
 CREATE POLICY "Users can update their own eval runs"
   ON public.eval_runs FOR UPDATE
   USING (auth.uid() = user_id);
@@ -215,6 +236,9 @@ CREATE POLICY "Users can update their own eval runs"
 -- Seed: Default routing rules (system-level, user_id = NULL)
 -- ═══════════════════════════════════════════════════════════════
 
+DO $schema$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.routing_rules WHERE user_id IS NULL) THEN
 -- Code Generation
 INSERT INTO public.routing_rules (user_id, task_type, priority_mode, candidates) VALUES
 (NULL, 'code_generation', 'quality', '[{"provider":"groq","model":"openai/gpt-oss-120b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash","weight":8},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
@@ -262,10 +286,16 @@ INSERT INTO public.routing_rules (user_id, task_type, priority_mode, candidates)
 (NULL, 'general', 'quality', '[{"provider":"gemini","model":"gemini-3.5-flash","weight":10},{"provider":"groq","model":"openai/gpt-oss-120b","weight":9},{"provider":"ollama","model":"llama3.2","weight":3}]'::jsonb),
 (NULL, 'general', 'fast', '[{"provider":"groq","model":"openai/gpt-oss-20b","weight":10},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":8},{"provider":"ollama","model":"llama3.2","weight":5}]'::jsonb),
 (NULL, 'general', 'cheap', '[{"provider":"ollama","model":"llama3.2","weight":10},{"provider":"groq","model":"openai/gpt-oss-20b","weight":9},{"provider":"gemini","model":"gemini-3.5-flash-lite","weight":7}]'::jsonb);
+  END IF;
+END
+$schema$;
 
 -- ═══════════════════════════════════════════════════════════════
 -- Seed: Benchmark prompts for eval mode (~25 prompts)
 -- ═══════════════════════════════════════════════════════════════
+DO $schema$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.eval_benchmarks) THEN
 INSERT INTO public.eval_benchmarks (prompt, task_type, difficulty, expected_output_hint) VALUES
 -- Code Generation (4)
 ('Write a Python function that takes a list of integers and returns the two numbers that add up to a target sum.', 'code_generation', 'easy', 'Should return a working two-sum function with O(n) complexity using a hash map'),
@@ -305,3 +335,6 @@ INSERT INTO public.eval_benchmarks (prompt, task_type, difficulty, expected_outp
 ('Translate "The quick brown fox jumps over the lazy dog" to Spanish.', 'translation', 'easy', 'El rápido zorro marrón salta sobre el perro perezoso'),
 ('Translate this Python code comment to French: "This function calculates the moving average of a time series using a sliding window approach"', 'translation', 'medium', 'Should translate the technical content accurately while preserving meaning'),
 ('Translate the following error message to Japanese for our localized error page: "Your session has expired. Please log in again to continue."', 'translation', 'medium', 'Should provide natural Japanese translation appropriate for a UI context');
+  END IF;
+END
+$schema$;

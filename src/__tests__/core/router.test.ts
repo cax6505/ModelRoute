@@ -5,11 +5,11 @@
  * no network calls, no database, no providers.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CircuitBreakerManager } from '@/lib/core/circuit-breaker';
 import { classifyWithRules } from '@/lib/core/classifier';
 import { selectRoute } from '@/lib/core/router';
-import type { ClassificationResult, PriorityMode, ProviderName } from '@/lib/core/types';
+import type { ClassificationResult, PriorityMode, TaskType } from '@/lib/core/types';
 
 // ─── Classifier Tests ────────────────────────────────────────
 
@@ -154,11 +154,11 @@ describe('selectRoute', () => {
   });
 
   function makeClassification(
-    taskType: string,
+    taskType: TaskType,
     confidence = 0.9,
   ): ClassificationResult {
     return {
-      taskType: taskType as any,
+      taskType,
       confidence,
       method: 'rules',
     };
@@ -209,13 +209,20 @@ describe('selectRoute', () => {
       (f) => f.provider === 'ollama',
     );
 
-    // Either ollama was skipped (in fallbacks with CB reason) or it was picked as last resort
-    if (ollamaFallback) {
-      expect(ollamaFallback.reason).toContain('Circuit breaker');
-    } else {
-      // It was chosen as last resort
-      expect(decision.reason).toContain('last resort');
-    }
+    expect(ollamaFallback).toBeDefined();
+    expect(ollamaFallback?.reason).toContain('Circuit breaker');
+    expect(decision.model).toBe('none');
+  });
+
+  it('does not admit concurrent local half-open probes', () => {
+    breaker.recordFailure('groq');
+    breaker.recordFailure('groq');
+    breaker.recordFailure('groq');
+    vi.useFakeTimers({ now: Date.now() });
+    vi.advanceTimersByTime(1001);
+    expect(breaker.isAvailable('groq')).toBe(true);
+    expect(breaker.isAvailable('groq')).toBe(false);
+    vi.useRealTimers();
   });
 
   it('returns reason string explaining the decision', () => {
@@ -230,7 +237,7 @@ describe('selectRoute', () => {
   });
 
   it('handles all task types without errors', () => {
-    const taskTypes = [
+    const taskTypes: TaskType[] = [
       'code_generation',
       'summarization',
       'extraction',

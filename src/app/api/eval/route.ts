@@ -1,8 +1,6 @@
-import { NextRequest } from 'next/server';
-import { selectRoute, executeWithFallback } from '@/lib/core/router';
+import { selectRoute } from '@/lib/core/router';
 import { classifyWithRules } from '@/lib/core/classifier';
 import { createApiError } from '@/lib/schemas';
-import type { TaskType } from '@/lib/core/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +18,7 @@ export async function GET() {
   return Response.json({ benchmarks: BENCHMARK_PROMPTS });
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const results = BENCHMARK_PROMPTS.map((item) => {
       const classification = classifyWithRules(item.prompt);
@@ -54,7 +52,7 @@ export async function POST(request: NextRequest) {
         completedAt: new Date().toISOString(),
       },
     });
-  } catch (error) {
+  } catch {
     return createApiError('INTERNAL_ERROR', 'Failed to run eval benchmark', 500);
   }
 }

@@ -30,7 +30,8 @@ import { checkRateLimit, rateLimitHeaders } from '@/lib/middleware/rate-limiter'
 import { validateApiKey } from '@/lib/middleware/auth';
 import { getSupabaseAdmin, sha256 } from '@/lib/db/client';
 import { logger, generateCorrelationId } from '@/lib/logger';
-import type { ProviderName, PriorityMode, RoutingDecision } from '@/lib/core/types';
+import { ProviderError } from '@/lib/core/types';
+import type { PriorityMode, RoutingDecision, RoutingRule } from '@/lib/core/types';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 15;
@@ -71,20 +72,18 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     const auth = await validateApiKey(authHeader);
 
-    // For now, allow unauthenticated requests in development
-    // In production, uncomment this to require auth:
-    // if (!auth.authenticated) {
-    //   return createApiError('UNAUTHORIZED', auth.error || 'Invalid API key', 401);
-    // }
+    if (!auth.authenticated && process.env.NODE_ENV === 'production') {
+      return createApiError('UNAUTHORIZED', auth.error || 'Invalid API key', 401);
+    }
 
-    const userId = auth.userId ?? 'anonymous';
+    const userId = auth.userId ?? null;
 
     // ─── 3. Rate Limit Check ───────────────────────────────
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       ?? request.headers.get('x-real-ip')
       ?? '127.0.0.1';
 
-    const rateLimitResult = await checkRateLimit(ip, userId);
+    const rateLimitResult = await checkRateLimit(ip, userId ?? ip);
 
     if (!rateLimitResult.allowed) {
       const headers = rateLimitHeaders(rateLimitResult);
@@ -105,29 +104,32 @@ export async function POST(request: NextRequest) {
     if (idempotencyKey) {
       try {
         const supabase = getSupabaseAdmin();
-        const { data: existing } = await supabase
+        let existingQuery = supabase
           .from('request_logs')
-          .select('id, status, routing_reason, provider, model, latency_ms')
+          .select('id, response_text, task_type, classifier_mode, routing_reason, provider, model, latency_ms, input_tokens, output_tokens, estimated_cost_usd')
           .eq('idempotency_key', idempotencyKey)
-          .limit(1)
-          .single();
+          .limit(1);
+        existingQuery = userId
+          ? existingQuery.eq('user_id', userId)
+          : existingQuery.is('user_id', null);
+        const { data: existing } = await existingQuery.single();
 
         if (existing) {
           log.info('Idempotent request — returning cached result', { idempotencyKey });
           return Response.json({
-            content: '[Idempotent response — original result was already processed]',
+            content: existing.response_text ?? '',
             routingDecision: {
-              taskType: 'general',
-              classifierMode: 'rules',
+              taskType: existing.task_type,
+              classifierMode: existing.classifier_mode,
               classifierConfidence: 1,
               provider: existing.provider,
               model: existing.model,
               reason: `Idempotent replay of request ${idempotencyKey}`,
               fallbacksConsidered: [],
               latencyMs: existing.latency_ms,
-              inputTokens: 0,
-              outputTokens: 0,
-              estimatedCostUsd: 0,
+              inputTokens: existing.input_tokens,
+              outputTokens: existing.output_tokens,
+              estimatedCostUsd: existing.estimated_cost_usd,
             },
           });
         }
@@ -163,9 +165,30 @@ export async function POST(request: NextRequest) {
     });
 
     // ─── 6. Select Route ───────────────────────────────────
+    let customRules: RoutingRule[] | undefined;
+    try {
+      const supabase = getSupabaseAdmin();
+      const { data: rules } = await supabase
+        .from('routing_rules')
+        .select('id, user_id, task_type, priority_mode, candidates, is_active')
+        .or(userId ? `user_id.is.null,user_id.eq.${userId}` : 'user_id.is.null')
+        .eq('is_active', true);
+      customRules = (rules ?? []).map((rule) => ({
+        id: rule.id,
+        userId: rule.user_id,
+        taskType: rule.task_type,
+        priorityMode: rule.priority_mode,
+        candidates: rule.candidates,
+        isActive: rule.is_active,
+      })) as RoutingRule[];
+    } catch {
+      log.warn('Routing policy lookup skipped — database not available');
+    }
+
     const decision = selectRoute({
       classification,
       priority: priority as PriorityMode,
+      customRules,
       breaker: circuitBreaker,
     });
 
@@ -185,16 +208,19 @@ export async function POST(request: NextRequest) {
 
     // ─── 7. Execute Request ────────────────────────────────
     const messages = [{ role: 'user' as const, content: prompt }];
+    const requestSignal = AbortSignal.timeout(10_000);
 
     if (stream) {
-      return handleStreaming(decision, messages, userId, correlationId, prompt, priority as PriorityMode, classification, idempotencyKey, log);
+      return handleStreaming(decision, messages, userId, correlationId, prompt, priority as PriorityMode, classification, idempotencyKey, requestSignal);
     }
 
     // Non-streaming
-    const { response, actualProvider, actualModel, attempts } = await executeWithFallback({
+    const { response, actualProvider, actualModel } = await executeWithFallback({
       decision,
       messages,
       breaker: circuitBreaker,
+      timeoutMs: 8_000,
+      signal: requestSignal,
     });
 
     const totalLatencyMs = Date.now() - startTime;
@@ -251,11 +277,10 @@ export async function POST(request: NextRequest) {
       latencyMs,
     });
 
-    return createApiError(
-      'INTERNAL_ERROR',
-      `Request failed: ${errorMessage}`,
-      500,
-    );
+    if (error instanceof ProviderError) {
+      return createApiError('PROVIDER_UNAVAILABLE', 'No provider could complete this request.', 503, { correlationId });
+    }
+    return createApiError('INTERNAL_ERROR', 'Request failed. Use the correlation ID to investigate the server log.', 500, { correlationId });
   }
 }
 
@@ -264,13 +289,13 @@ export async function POST(request: NextRequest) {
 async function handleStreaming(
   decision: RoutingDecision,
   messages: Array<{ role: 'user'; content: string }>,
-  userId: string,
+  userId: string | null,
   correlationId: string,
   prompt: string,
   priority: PriorityMode,
   classification: { taskType: string; confidence: number; method: string },
   idempotencyKey: string | undefined,
-  log: ReturnType<typeof logger.child>,
+  signal: AbortSignal,
 ): Promise<Response> {
   const encoder = new TextEncoder();
   const startTime = Date.now();
@@ -280,6 +305,8 @@ async function handleStreaming(
       decision,
       messages,
       breaker: circuitBreaker,
+      timeoutMs: 8_000,
+      signal,
     });
 
   const readable = new ReadableStream({
@@ -329,7 +356,7 @@ async function handleStreaming(
               correlationId,
               prompt,
               response: fullResponse,
-              classification: classification as any,
+              classification,
               decision: { ...decision, provider: actualProvider, model: actualModel },
               priority,
               latencyMs: totalLatencyMs,
@@ -365,7 +392,7 @@ async function handleStreaming(
 // ─── Request Logging (fire-and-forget) ──────────────────────
 
 function logRequest(params: {
-  userId: string;
+  userId: string | null;
   correlationId: string;
   prompt: string;
   response: string;
@@ -394,6 +421,22 @@ function logRequest(params: {
         prompt_length: params.prompt.length,
         prompt_text: logFullPrompts ? params.prompt : null,
         response_text: logFullPrompts ? params.response : null,
+        idempotency_response: params.idempotencyKey
+          ? {
+              content: params.response,
+              taskType: params.decision.taskType,
+              classifierMode: params.decision.classifierMode,
+              classifierConfidence: params.decision.classifierConfidence,
+              provider: params.decision.provider,
+              model: params.decision.model,
+              reason: params.decision.reason,
+              fallbacksConsidered: params.decision.fallbacksConsidered,
+              latencyMs: params.latencyMs,
+              inputTokens: params.inputTokens,
+              outputTokens: params.outputTokens,
+              estimatedCostUsd: params.estimatedCostUsd,
+            }
+          : null,
         task_type: params.classification.taskType,
         classifier_mode: params.classification.method,
         provider: params.decision.provider,

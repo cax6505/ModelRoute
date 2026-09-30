@@ -232,7 +232,7 @@ export function Chip({
 }
 export function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="rounded border border-[var(--border-strong)] bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--ink-faint)]">
+    <kbd className="inline-flex min-w-[32px] justify-center rounded-[var(--radius-1)] border border-[var(--border-strong)] bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[11px] leading-4 text-[var(--ink-faint)]">
       {children}
     </kbd>
   );

@@ -81,8 +81,19 @@ export async function checkRateLimit(
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-  // Graceful bypass if Upstash Redis is not configured or dummy
-  if (!url || !token || url.includes('localhost') || token.includes('dummy')) {
+  // Local development should not consume shared Redis quotas while iterating.
+  // Production requires a real Redis configuration and fails closed otherwise.
+  if (process.env.NODE_ENV !== 'production' || !url || !token || url.includes('localhost') || token.includes('dummy')) {
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        allowed: false,
+        tier: 'burst',
+        limit: 0,
+        remaining: 0,
+        reset: Date.now() + 60_000,
+        retryAfterMs: 60_000,
+      };
+    }
     return {
       allowed: true,
       tier: 'burst',
@@ -131,18 +142,16 @@ export async function checkRateLimit(
       retryAfterMs: 0,
     };
   } catch (error) {
-    // If rate limiting fails (Redis down), log but allow the request
-    // This prevents a Redis outage from blocking all traffic
-    log.error('Rate limiting check failed — allowing request', {
+    log.error('Rate limiting check failed — rejecting request', {
       error: error instanceof Error ? error.message : 'Unknown',
     });
     return {
-      allowed: true,
+      allowed: false,
       tier: 'burst',
       limit: 0,
       remaining: 0,
-      reset: 0,
-      retryAfterMs: 0,
+      reset: Date.now() + 60_000,
+      retryAfterMs: 60_000,
     };
   }
 }

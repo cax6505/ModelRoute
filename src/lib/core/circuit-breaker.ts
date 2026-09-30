@@ -35,6 +35,7 @@ interface ProviderCircuit {
   failures: number[];        // timestamps of recent failures
   lastFailureAt: number | null;
   openedAt: number | null;
+  probeClaimed: boolean;
 }
 
 /**
@@ -70,6 +71,7 @@ export class CircuitBreakerManager {
         Date.now() - circuit.openedAt >= this.config.cooldownMs
       ) {
         circuit.state = 'HALF_OPEN';
+        circuit.probeClaimed = true;
         this.log.info(`Circuit for ${provider} moved to HALF_OPEN (cooldown elapsed)`, {
           provider,
         });
@@ -78,7 +80,9 @@ export class CircuitBreakerManager {
       return false;
     }
 
-    // HALF_OPEN — allow the probe request
+    // HALF_OPEN — claim one local probe request.
+    if (circuit.probeClaimed) return false;
+    circuit.probeClaimed = true;
     return true;
   }
 
@@ -95,6 +99,7 @@ export class CircuitBreakerManager {
     circuit.state = 'CLOSED';
     circuit.failures = [];
     circuit.openedAt = null;
+    circuit.probeClaimed = false;
   }
 
   /**
@@ -109,6 +114,7 @@ export class CircuitBreakerManager {
       circuit.state = 'OPEN';
       circuit.openedAt = now;
       circuit.lastFailureAt = now;
+      circuit.probeClaimed = false;
       this.log.warn(`Circuit for ${provider} probe failed → OPEN`, { provider });
       return;
     }
@@ -124,6 +130,7 @@ export class CircuitBreakerManager {
     if (circuit.failures.length >= this.config.failureThreshold) {
       circuit.state = 'OPEN';
       circuit.openedAt = now;
+      circuit.probeClaimed = false;
       this.log.warn(
         `Circuit for ${provider} tripped → OPEN (${circuit.failures.length} failures in ${this.config.rollingWindowMs}ms window)`,
         { provider, failureCount: circuit.failures.length },
@@ -177,6 +184,7 @@ export class CircuitBreakerManager {
       failures: [],
       lastFailureAt: null,
       openedAt: null,
+      probeClaimed: false,
     });
     this.log.info(`Circuit for ${provider} manually reset → CLOSED`, { provider });
   }
@@ -188,6 +196,7 @@ export class CircuitBreakerManager {
         failures: [],
         lastFailureAt: null,
         openedAt: null,
+        probeClaimed: false,
       });
     }
     return this.circuits.get(provider)!;

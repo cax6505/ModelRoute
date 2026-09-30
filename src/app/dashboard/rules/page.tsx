@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, RotateCcw, Save, Sliders } from "lucide-react";
 import { PRIORITY_MODES, TASK_TYPES } from "@/lib/core/types";
 import {
@@ -23,6 +23,35 @@ export default function RulesEditorPage() {
   const [priority, setPriority] = useState("quality");
   const [candidates, setCandidates] = useState(defaults);
   const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  useEffect(() => {
+    void fetch("/api/rules")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { rules?: Array<{ task_type: string; priority_mode: string; candidates: Candidate[] }> } | null) => {
+        const rule = payload?.rules?.find((item) => item.task_type === task && item.priority_mode === priority);
+        if (rule?.candidates?.length) setCandidates(rule.candidates);
+      })
+      .catch(() => setMessage("Routing rules could not be loaded."));
+  }, [priority, task]);
+  const save = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/rules", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskType: task, priorityMode: priority, candidates, isActive: true }),
+      });
+      if (!response.ok) throw new Error("Save failed");
+      setDirty(false);
+      setMessage("Policy saved.");
+    } catch {
+      setMessage("Policy could not be saved.");
+    } finally {
+      setSaving(false);
+    }
+  };
   const move = (index: number, direction: number) => {
     const next = [...candidates];
     const target = index + direction;
@@ -159,7 +188,8 @@ export default function RulesEditorPage() {
             </DsButton>
             <DsButton
               size="sm"
-              onClick={() => setDirty(false)}
+              onClick={save}
+              isLoading={saving}
               icon={<Save className="size-4" />}
             >
               Save
@@ -167,6 +197,7 @@ export default function RulesEditorPage() {
           </div>
         </div>
       )}
+      {message && <p role="status" className="text-sm text-[var(--ink-muted)]">{message}</p>}
     </div>
   );
 }

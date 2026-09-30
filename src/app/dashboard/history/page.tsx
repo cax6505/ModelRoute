@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, Search } from "lucide-react";
 import {
   DsEmptyState,
@@ -22,57 +22,17 @@ interface RequestLog {
   priority: string;
   correlation_id: string;
 }
-const logs: RequestLog[] = [
-  {
-    id: "1",
-    created_at: "2026-09-30T07:20:00Z",
-    task_type: "code_generation",
-    provider: "groq",
-    model: "openai/gpt-oss-120b",
-    latency_ms: 1234,
-    input_tokens: 156,
-    output_tokens: 892,
-    estimated_cost_usd: 0.000795,
-    status: "success",
-    routing_reason: "Highest weight for quality code generation.",
-    priority: "quality",
-    correlation_id: "mr_abc123",
-  },
-  {
-    id: "2",
-    created_at: "2026-09-30T07:18:00Z",
-    task_type: "simple_qa",
-    provider: "groq",
-    model: "openai/gpt-oss-20b",
-    latency_ms: 287,
-    input_tokens: 42,
-    output_tokens: 128,
-    estimated_cost_usd: 0.000012,
-    status: "success",
-    routing_reason: "Fast priority selected the top candidate.",
-    priority: "fast",
-    correlation_id: "mr_def456",
-  },
-  {
-    id: "3",
-    created_at: "2026-09-30T07:15:00Z",
-    task_type: "translation",
-    provider: "gemini",
-    model: "gemini-3.5-flash",
-    latency_ms: 1800,
-    input_tokens: 87,
-    output_tokens: 95,
-    estimated_cost_usd: 0.000047,
-    status: "fallback",
-    routing_reason: "Groq rate limit reached; fallback executed via Gemini.",
-    priority: "quality",
-    correlation_id: "mr_jkl012",
-  },
-];
 export default function HistoryPage() {
+  const [logs, setLogs] = useState<RequestLog[]>([]);
   const [query, setQuery] = useState("");
   const [provider, setProvider] = useState("all");
   const [selected, setSelected] = useState<RequestLog | null>(null);
+  useEffect(() => {
+    void fetch("/api/history")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { logs?: RequestLog[] } | null) => setLogs(payload?.logs ?? []))
+      .catch(() => setLogs([]));
+  }, []);
   const filtered = logs.filter(
     (log) =>
       (provider === "all" || log.provider === provider) &&

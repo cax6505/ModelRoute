@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Copy, Key, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { DsButton, DsCard, DsStatusBadge } from "@/components/design-system";
 interface ApiKey {
@@ -11,43 +11,27 @@ interface ApiKey {
   revoked: boolean;
 }
 export default function ApiKeysPage() {
-  const [keys, setKeys] = useState<ApiKey[]>([
-    {
-      id: "1",
-      name: "Production application",
-      prefix: "mr_live_a1b2c3d4",
-      created: "Sep 23, 2026",
-      lastUsed: "1 hour ago",
-      revoked: false,
-    },
-    {
-      id: "2",
-      name: "Staging worker",
-      prefix: "mr_live_e5f6g7h8",
-      created: "Sep 16, 2026",
-      lastUsed: "2 days ago",
-      revoked: false,
-    },
-  ]);
+  const [keys, setKeys] = useState<ApiKey[]>([]);
   const [name, setName] = useState("");
   const [revealed, setRevealed] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<string | null>(null);
+  useEffect(() => {
+    void fetch("/api/keys")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { keys?: Array<{ id: string; name: string; key_prefix: string; created_at: string; last_used_at?: string; is_revoked: boolean }> } | null) => {
+        if (payload?.keys) setKeys(payload.keys.map((item) => ({ id: item.id, name: item.name, prefix: item.key_prefix, created: new Date(item.created_at).toLocaleDateString(), lastUsed: item.last_used_at ? new Date(item.last_used_at).toLocaleString() : "Never", revoked: item.is_revoked })));
+      })
+      .catch(() => setMessage("Keys could not be loaded."))
+      .finally(() => setLoading(false));
+  }, []);
   const create = () => {
     if (!name.trim()) return;
-    const raw = `mr_live_${crypto.randomUUID().replaceAll("-", "")}`;
-    setKeys([
-      {
-        id: crypto.randomUUID(),
-        name: name.trim(),
-        prefix: raw.slice(0, 16),
-        created: "Just now",
-        lastUsed: "Never",
-        revoked: false,
-      },
-      ...keys,
-    ]);
-    setRevealed(raw);
-    setName("");
+    void fetch("/api/keys", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim() }) })
+      .then(async (response) => { if (!response.ok) throw new Error("Create failed"); return response.json(); })
+      .then((payload: { rawKey: string; key: { id: string; name: string; key_prefix: string; created_at: string } }) => { setKeys((current) => [{ id: payload.key.id, name: payload.key.name, prefix: payload.key.key_prefix, created: "Just now", lastUsed: "Never", revoked: false }, ...current]); setRevealed(payload.rawKey); setName(""); })
+      .catch(() => setMessage("Key could not be created."));
   };
   return (
     <div className="space-y-6 p-4 sm:p-8">
@@ -85,6 +69,7 @@ export default function ApiKeysPage() {
         }
       >
         <div className="space-y-3">
+          {loading && <p className="text-sm text-[var(--ink-muted)]">Loading keys...</p>}
           {keys.map((item) => (
             <div
               key={item.id}
@@ -105,13 +90,7 @@ export default function ApiKeysPage() {
                 <DsButton
                   variant="destructive"
                   size="sm"
-                  onClick={() =>
-                    setKeys(
-                      keys.map((key) =>
-                        key.id === item.id ? { ...key, revoked: true } : key,
-                      ),
-                    )
-                  }
+                  onClick={() => { if (!window.confirm("Revoke this API key?")) return; void fetch(`/api/keys?id=${encodeURIComponent(item.id)}`, { method: "DELETE" }).then((response) => { if (!response.ok) throw new Error("Revoke failed"); setKeys((current) => current.map((key) => key.id === item.id ? { ...key, revoked: true } : key)); }).catch(() => setMessage("Key could not be revoked.")); }}
                   icon={<Trash2 className="size-4" />}
                 >
                   Revoke
@@ -154,6 +133,7 @@ export default function ApiKeysPage() {
           </div>
         </div>
       )}
+      {message && <p role="status" className="text-sm text-[var(--danger)]">{message}</p>}
     </div>
   );
 }

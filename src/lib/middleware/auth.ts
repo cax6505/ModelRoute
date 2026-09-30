@@ -12,6 +12,7 @@
 
 import { getSupabaseAdmin, sha256 } from '@/lib/db/client';
 import { logger } from '@/lib/logger';
+import { timingSafeEqual } from 'node:crypto';
 
 const log = logger.child({ component: 'auth' });
 
@@ -66,7 +67,11 @@ export async function validateApiKey(authHeader: string | null): Promise<AuthRes
     }
 
     // Find the matching key by hash
-    const matchingKey = data.find((k) => k.key_hash === keyHash);
+    const matchingKey = data.find((k) => {
+      const expected = Buffer.from(k.key_hash, 'hex');
+      const actual = Buffer.from(keyHash, 'hex');
+      return expected.length === actual.length && timingSafeEqual(expected, actual);
+    });
     if (!matchingKey) {
       return { authenticated: false, error: 'Invalid API key' };
     }

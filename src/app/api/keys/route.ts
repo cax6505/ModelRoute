@@ -7,24 +7,33 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await validateApiKey(request.headers.get('authorization'));
+    if (!auth.authenticated && process.env.NODE_ENV === 'production') {
+      return createApiError('UNAUTHORIZED', auth.error || 'Invalid API key', 401);
+    }
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
+    let query = supabase
       .from('api_keys')
-      .select('id, name, key_prefix, rate_limit_rpm, is_revoked, last_used_at, created_at')
-      .order('created_at', { ascending: false });
+      .select('id, name, key_prefix, rate_limit_rpm, is_revoked, last_used_at, created_at');
+    if (auth.userId) query = query.eq('user_id', auth.userId);
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       return Response.json({ keys: [] });
     }
 
     return Response.json({ keys: data ?? [] });
-  } catch (error) {
+  } catch {
     return createApiError('INTERNAL_ERROR', 'Failed to fetch API keys', 500);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await validateApiKey(request.headers.get('authorization'));
+    if (!auth.authenticated && process.env.NODE_ENV === 'production') {
+      return createApiError('UNAUTHORIZED', auth.error || 'Invalid API key', 401);
+    }
     const body = await request.json();
     const parseResult = CreateApiKeySchema.safeParse(body);
 
@@ -36,8 +45,7 @@ export async function POST(request: NextRequest) {
     const { rawKey, keyHash, keyPrefix } = await generateApiKey();
 
     const supabase = getSupabaseAdmin();
-    // Default user ID for demo/MVP
-    const userId = '00000000-0000-0000-0000-000000000000';
+    const userId = auth.userId ?? '00000000-0000-0000-0000-000000000000';
 
     const { data, error } = await supabase.from('api_keys').insert({
       user_id: userId,
@@ -63,7 +71,26 @@ export async function POST(request: NextRequest) {
     }
 
     return Response.json({ rawKey, key: data });
-  } catch (error) {
+  } catch {
     return createApiError('INTERNAL_ERROR', 'Failed to create API key', 500);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await validateApiKey(request.headers.get('authorization'));
+    if (!auth.authenticated && process.env.NODE_ENV === 'production') {
+      return createApiError('UNAUTHORIZED', auth.error || 'Invalid API key', 401);
+    }
+    const id = new URL(request.url).searchParams.get('id');
+    if (!id) return createApiError('VALIDATION_ERROR', 'Key id is required', 400);
+    const supabase = getSupabaseAdmin();
+    let query = supabase.from('api_keys').update({ is_revoked: true }).eq('id', id);
+    if (auth.userId) query = query.eq('user_id', auth.userId);
+    const { error } = await query;
+    if (error) return createApiError('NOT_FOUND', 'API key not found', 404);
+    return Response.json({ revoked: true, id });
+  } catch {
+    return createApiError('INTERNAL_ERROR', 'Failed to revoke API key', 500);
   }
 }
