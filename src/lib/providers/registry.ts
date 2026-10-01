@@ -6,13 +6,13 @@
  * model information aggregation.
  */
 
-import type { LLMProvider, ProviderName, ModelInfo } from '@/lib/core/types';
-import { GroqProvider } from './groq';
-import { GeminiProvider } from './gemini';
-import { OllamaProvider } from './ollama';
-import { logger } from '@/lib/logger';
+import type { LLMProvider, ProviderName, ModelInfo } from "@/lib/core/types";
+import { GroqProvider } from "./groq";
+import { GeminiProvider } from "./gemini";
+import { OpenRouterProvider } from "./openrouter";
+import { logger } from "@/lib/logger";
 
-const log = logger.child({ component: 'provider-registry' });
+const log = logger.child({ component: "provider-registry" });
 
 class ProviderRegistry {
   private providers: Map<ProviderName, LLMProvider> = new Map();
@@ -29,7 +29,7 @@ class ProviderRegistry {
   private init(): void {
     // In development, always re-read env vars to handle hot module reloads
     // and cases where env vars weren't available during initial module load.
-    if (this.initialized && process.env.NODE_ENV !== 'development') return;
+    if (this.initialized && process.env.NODE_ENV !== "development") return;
 
     // If re-initializing in dev mode, only do so if providers are empty
     // (avoids unnecessary re-creation of provider instances on every call).
@@ -41,39 +41,37 @@ class ProviderRegistry {
     // Groq
     const groqKey = process.env.GROQ_API_KEY;
     if (groqKey) {
-      this.providers.set('groq', new GroqProvider(groqKey));
-      log.info('Groq provider initialized');
+      this.providers.set("groq", new GroqProvider(groqKey));
+      log.info("Groq provider initialized");
     } else {
-      log.warn('Groq provider not available: GROQ_API_KEY not set');
+      log.warn("Groq provider not available: GROQ_API_KEY not set");
     }
 
     // Gemini
     const geminiKey = process.env.GEMINI_API_KEY;
     if (geminiKey) {
-      this.providers.set('gemini', new GeminiProvider(geminiKey));
-      log.info('Gemini provider initialized');
+      this.providers.set("gemini", new GeminiProvider(geminiKey));
+      log.info("Gemini provider initialized");
     } else {
-      log.warn('Gemini provider not available: GEMINI_API_KEY not set');
+      log.warn("Gemini provider not available: GEMINI_API_KEY not set");
     }
 
-    // Ollama — only add if explicitly configured with a remote URL, or in local development
-    const ollamaUrl = process.env.OLLAMA_BASE_URL;
-    const isCloud = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
-
-    if (ollamaUrl && !ollamaUrl.includes('localhost') && !ollamaUrl.includes('127.0.0.1')) {
-      this.providers.set('ollama', new OllamaProvider(ollamaUrl));
-      log.info('Ollama provider initialized with remote URL', { baseUrl: ollamaUrl });
-    } else if (!isCloud) {
-      this.providers.set('ollama', new OllamaProvider('http://localhost:11434'));
-      log.info('Ollama provider initialized (local development)');
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    if (openRouterKey) {
+      this.providers.set("openrouter", new OpenRouterProvider(openRouterKey));
+      log.info("OpenRouter provider initialized");
     } else {
-      log.warn('Ollama skipped in cloud deployment (localhost is unreachable)');
+      log.warn("OpenRouter provider not available: OPENROUTER_API_KEY not set");
     }
 
     if (this.providers.size === 0) {
-      log.error('No LLM providers initialized — check that GROQ_API_KEY or GEMINI_API_KEY is set in .env.local');
+      log.error(
+        "No LLM providers initialized — check that GROQ_API_KEY, GEMINI_API_KEY, or OPENROUTER_API_KEY is set in .env.local",
+      );
     } else {
-      log.info(`Provider registry initialized with ${this.providers.size} provider(s): ${Array.from(this.providers.keys()).join(', ')}`);
+      log.info(
+        `Provider registry initialized with ${this.providers.size} provider(s): ${Array.from(this.providers.keys()).join(", ")}`,
+      );
     }
   }
 
@@ -134,7 +132,9 @@ class ProviderRegistry {
   /**
    * Find a specific model by ID across all providers.
    */
-  findModel(modelId: string): { provider: LLMProvider; model: ModelInfo } | undefined {
+  findModel(
+    modelId: string,
+  ): { provider: LLMProvider; model: ModelInfo } | undefined {
     this.init();
     for (const provider of this.providers.values()) {
       const model = provider.models.find((m) => m.id === modelId);
@@ -158,6 +158,6 @@ const globalForProviders = globalThis as unknown as {
 export const providerRegistry =
   globalForProviders.providerRegistry ?? new ProviderRegistry();
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== "production") {
   globalForProviders.providerRegistry = providerRegistry;
 }
