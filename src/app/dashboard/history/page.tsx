@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Download, Search } from "lucide-react";
+import { Download, RefreshCw, Search } from "lucide-react";
 import {
   DsEmptyState,
   DsIntentBadge,
@@ -27,12 +27,29 @@ export default function HistoryPage() {
   const [query, setQuery] = useState("");
   const [provider, setProvider] = useState("all");
   const [selected, setSelected] = useState<RequestLog | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
   useEffect(() => {
     void fetch("/api/history")
-      .then((response) => (response.ok ? response.json() : null))
-      .then((payload: { logs?: RequestLog[] } | null) => setLogs(payload?.logs ?? []))
-      .catch(() => setLogs([]));
-  }, []);
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Request history is unavailable.");
+        return response.json();
+      })
+      .then((payload: { logs?: RequestLog[] } | null) => {
+        setError(null);
+        setLogs(payload?.logs ?? []);
+      })
+      .catch((reason: unknown) => {
+        setLogs([]);
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "Request history is unavailable.",
+        );
+      })
+      .finally(() => setLoading(false));
+  }, [refreshToken]);
   const filtered = logs.filter(
     (log) =>
       (provider === "all" || log.provider === provider) &&
@@ -61,7 +78,7 @@ export default function HistoryPage() {
               className="w-52 bg-transparent text-xs outline-none"
             />
           </label>
-          {["all", "groq", "gemini", "ollama"].map((item) => (
+          {["all", "groq", "gemini", "openrouter"].map((item) => (
             <button
               type="button"
               key={item}
@@ -75,12 +92,37 @@ export default function HistoryPage() {
         <button
           type="button"
           onClick={exportLogs}
+          disabled={!filtered.length}
           className="inline-flex items-center gap-2 rounded-[var(--radius-2)] border border-[var(--border-strong)] px-3 py-2 text-xs"
         >
           <Download className="size-4" />
           Export JSON
         </button>
+        <button
+          type="button"
+          onClick={() => setRefreshToken((value) => value + 1)}
+          aria-label="Refresh request history"
+          className="inline-flex items-center gap-2 rounded-[var(--radius-2)] border border-[var(--border-strong)] px-3 py-2 text-xs text-[var(--ink-muted)] hover:bg-[var(--surface-sunken)]"
+        >
+          <RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />
+          Refresh
+        </button>
       </div>
+      {error && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-2)] border border-[var(--danger)] bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)]"
+        >
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => setRefreshToken((value) => value + 1)}
+            className="font-medium underline underline-offset-2"
+          >
+            Try again
+          </button>
+        </div>
+      )}
       <div className="overflow-hidden rounded-[var(--radius-3)] border border-[var(--border-hairline)] bg-[var(--surface)]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-xs">
@@ -102,45 +144,58 @@ export default function HistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((log) => (
-                <tr
-                  key={log.id}
-                  onClick={() => setSelected(log)}
-                  className="cursor-pointer border-b border-[var(--border-hairline)] hover:bg-[var(--accent-soft)]"
-                >
-                  <td className="px-4 py-4 font-mono text-[var(--ink-muted)]">
-                    {new Date(log.created_at).toLocaleTimeString()}
-                  </td>
-                  <td className="px-4 py-4">
-                    <DsIntentBadge intent={log.task_type} />
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-2">
-                      <DsProviderBadge provider={log.provider} />
-                      <span className="font-mono text-[var(--ink-muted)]">
-                        {log.model}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 font-mono">{log.latency_ms} ms</td>
-                  <td className="px-4 py-4 font-mono text-[var(--ink-muted)]">
-                    {log.input_tokens} → {log.output_tokens}
-                  </td>
-                  <td className="px-4 py-4 font-mono">
-                    ${log.estimated_cost_usd.toFixed(6)}
-                  </td>
-                  <td className="px-4 py-4">
-                    <DsStatusBadge status={log.status} />
-                  </td>
-                </tr>
-              ))}
+              {!loading &&
+                filtered.map((log) => (
+                  <tr
+                    key={log.id}
+                    onClick={() => setSelected(log)}
+                    className="cursor-pointer border-b border-[var(--border-hairline)] hover:bg-[var(--accent-soft)]"
+                  >
+                    <td className="px-4 py-4 font-mono text-[var(--ink-muted)]">
+                      {new Date(log.created_at).toLocaleTimeString()}
+                    </td>
+                    <td className="px-4 py-4">
+                      <DsIntentBadge intent={log.task_type} />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <DsProviderBadge provider={log.provider} />
+                        <span className="font-mono text-[var(--ink-muted)]">
+                          {log.model}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 font-mono">{log.latency_ms} ms</td>
+                    <td className="px-4 py-4 font-mono text-[var(--ink-muted)]">
+                      {log.input_tokens} → {log.output_tokens}
+                    </td>
+                    <td className="px-4 py-4 font-mono">
+                      ${log.estimated_cost_usd.toFixed(6)}
+                    </td>
+                    <td className="px-4 py-4">
+                      <DsStatusBadge status={log.status} />
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
-        {!filtered.length && (
+        {loading && (
           <DsEmptyState
-            title="No matching requests"
-            description="Adjust the search or provider filter."
+            title="Loading request history"
+            description="Reading persisted routing decisions..."
+          />
+        )}
+        {!loading && !error && !filtered.length && (
+          <DsEmptyState
+            title={
+              logs.length ? "No matching requests" : "No requests recorded yet"
+            }
+            description={
+              logs.length
+                ? "Adjust the search or provider filter."
+                : "Run a prompt in Playground Studio to create the first audit record."
+            }
           />
         )}
       </div>

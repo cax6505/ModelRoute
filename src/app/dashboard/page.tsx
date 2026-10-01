@@ -7,11 +7,15 @@ import {
   Clipboard,
   Code2,
   FileText,
+  HelpCircle,
+  Lightbulb,
   Languages,
   LoaderCircle,
+  PenLine,
   Send,
   ShieldCheck,
   Sparkles,
+  X,
 } from "lucide-react";
 import {
   Select,
@@ -29,6 +33,11 @@ import {
   SegmentedControl,
 } from "@/components/design-system";
 
+interface TraceStep {
+  label: string;
+  detail: string;
+}
+
 interface RoutingDecision {
   taskType: string;
   classifierMode: string;
@@ -45,6 +54,7 @@ interface RoutingDecision {
   inputTokens?: number;
   outputTokens?: number;
   estimatedCostUsd?: number;
+  trace?: TraceStep[];
 }
 
 function renderInlineMarkdown(text: string): ReactNode[] {
@@ -180,7 +190,7 @@ function MarkdownResponse({ content }: { content: string }) {
   return <>{blocks}</>;
 }
 
-const workloads = [
+const workloadOptions = [
   {
     title: "Code synthesis",
     task: "code_generation",
@@ -209,6 +219,33 @@ const workloads = [
     prompt:
       'Translate this notification into French: "Your API key quota is operating at 80% capacity. Upgrade to prevent interruption."',
   },
+  {
+    title: "Reasoning review",
+    task: "reasoning",
+    icon: Lightbulb,
+    prompt:
+      "Compare a queue and a stack, then recommend which one fits a browser history implementation and explain why.",
+  },
+  {
+    title: "Quick answer",
+    task: "simple_qa",
+    icon: HelpCircle,
+    prompt: "What does an HTTP 404 status code mean, and what is the usual fix?",
+  },
+  {
+    title: "Creative brief",
+    task: "creative_writing",
+    icon: PenLine,
+    prompt:
+      "Write three playful product taglines for a calm, reliable API gateway.",
+  },
+  {
+    title: "Open-ended planning",
+    task: "general",
+    icon: Brain,
+    prompt:
+      "Help me decide how to organize a small team's first week of reliability work.",
+  },
 ];
 export default function PlaygroundPage() {
   const [prompt, setPrompt] = useState("");
@@ -218,8 +255,13 @@ export default function PlaygroundPage() {
   const [response, setResponse] = useState("");
   const [routingDecision, setRoutingDecision] =
     useState<RoutingDecision | null>(null);
+  const [trace, setTrace] = useState<TraceStep[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [visibleWorkloads, setVisibleWorkloads] = useState(() =>
+    workloadOptions.slice(0, 4),
+  );
+  const abortControllerRef = useRef<AbortController | null>(null);
   const responseViewportRef = useRef<HTMLDivElement>(null);
   const followResponseRef = useRef(true);
   useEffect(() => {
@@ -228,12 +270,22 @@ export default function PlaygroundPage() {
       viewport.scrollTop = viewport.scrollHeight;
     }
   }, [response]);
+  useEffect(() => {
+    const shuffled = [...workloadOptions].sort(() => Math.random() - 0.5);
+    const frame = window.requestAnimationFrame(() => {
+      setVisibleWorkloads(shuffled.slice(0, 4));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   const handleSubmit = useCallback(async () => {
     if (!prompt.trim() || isStreaming) return;
     setIsStreaming(true);
     setResponse("");
     setRoutingDecision(null);
+    setTrace([]);
     setError(null);
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
     try {
       const body: Record<string, unknown> = {
         prompt: prompt.trim(),
@@ -245,6 +297,7 @@ export default function PlaygroundPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        signal: abortController.signal,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const reader = res.body?.getReader();
@@ -261,8 +314,10 @@ export default function PlaygroundPage() {
           if (!line.startsWith("data: ")) continue;
           try {
             const parsed = JSON.parse(line.slice(6));
-            if (parsed.taskType && parsed.provider && parsed.reason)
+            if (parsed.taskType && parsed.provider && parsed.reason) {
               setRoutingDecision(parsed);
+              setTrace(parsed.trace ?? []);
+            }
             else if (parsed.content !== undefined)
               setResponse((current) => current + parsed.content);
             else if (parsed.latencyMs !== undefined)
@@ -276,11 +331,17 @@ export default function PlaygroundPage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Execution failed");
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError("Route cancelled. Partial output has been preserved.");
+      } else {
+        setError(err instanceof Error ? err.message : "Execution failed");
+      }
     } finally {
+      abortControllerRef.current = null;
       setIsStreaming(false);
     }
   }, [isStreaming, priority, prompt, taskHint]);
+  const cancelRoute = () => abortControllerRef.current?.abort();
   const copyResponse = () => {
     if (!response) return;
     void navigator.clipboard.writeText(response);
@@ -369,13 +430,13 @@ export default function PlaygroundPage() {
                 </div>
               </div>
               <DsButton
-                onClick={handleSubmit}
+                onClick={isStreaming ? cancelRoute : handleSubmit}
                 disabled={!prompt.trim()}
-                isLoading={isStreaming}
-                icon={<Send className="size-4" />}
+                isLoading={false}
+                icon={isStreaming ? <X className="size-4" /> : <Send className="size-4" />}
               >
-                Execute route{" "}
-                <span className="font-mono text-xs opacity-70">⌘↵</span>
+                {isStreaming ? "Cancel route" : "Execute route"}{" "}
+                {!isStreaming && <span className="font-mono text-xs opacity-70">⌘↵</span>}
               </DsButton>
             </div>
           </DsCard>
@@ -438,6 +499,30 @@ export default function PlaygroundPage() {
                   {routingDecision.reason}
                 </p>
               </details>
+              {trace.length > 0 && (
+                <div className="mt-4 border-t border-[var(--border-hairline)] pt-4">
+                  <p className="mb-3 text-xs font-medium text-[var(--ink-muted)]">
+                    Decision trace
+                  </p>
+                  <ol className="space-y-3">
+                    {trace.map((step, index) => (
+                      <li key={step.label} className="flex gap-3 text-xs">
+                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] font-mono text-[var(--accent)]">
+                          {index + 1}
+                        </span>
+                        <span className="min-w-0">
+                          <strong className="block font-medium text-[var(--ink)]">
+                            {step.label}
+                          </strong>
+                          <span className="mt-0.5 block break-words leading-5 text-[var(--ink-muted)]">
+                            {step.detail}
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </DsCard>
           ) : (
             <DsEmptyState
@@ -452,10 +537,10 @@ export default function PlaygroundPage() {
               Try a workload
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {workloads.map((workload) => (
+              {visibleWorkloads.map((workload) => (
                 <button
-                  type="button"
                   key={workload.title}
+                  type="button"
                   onClick={() => {
                     setPrompt(workload.prompt);
                     setTaskHint(workload.task);

@@ -30,7 +30,7 @@ export default function ApiKeysPage() {
     if (!name.trim()) return;
     void fetch("/api/keys", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim() }) })
       .then(async (response) => { if (!response.ok) throw new Error("Create failed"); return response.json(); })
-      .then((payload: { rawKey: string; key: { id: string; name: string; key_prefix: string; created_at: string } }) => { setKeys((current) => [{ id: payload.key.id, name: payload.key.name, prefix: payload.key.key_prefix, created: "Just now", lastUsed: "Never", revoked: false }, ...current]); setRevealed(payload.rawKey); setName(""); })
+      .then((payload: { rawKey: string; persisted?: boolean; key: { id: string; name: string; key_prefix: string; created_at: string } }) => { setKeys((current) => [{ id: payload.key.id, name: payload.key.name, prefix: payload.key.key_prefix, created: "Just now", lastUsed: "Never", revoked: false }, ...current]); setRevealed(payload.rawKey); setMessage(payload.persisted === false ? "Demo key created locally; authenticate to persist it." : null); setName(""); })
       .catch(() => setMessage("Key could not be created."));
   };
   return (

@@ -4,11 +4,11 @@ import React from "react";
 import { LoaderCircle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ProviderName = "groq" | "gemini" | "ollama" | string;
+export type ProviderName = "groq" | "gemini" | "openrouter" | string;
 const providerColors: Record<string, string> = {
   groq: "var(--groq)",
   gemini: "var(--gemini)",
-  ollama: "var(--ollama)",
+  openrouter: "var(--openrouter)",
 };
 
 export function ProviderDot({

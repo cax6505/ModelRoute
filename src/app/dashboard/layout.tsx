@@ -68,7 +68,7 @@ const navItems = [
 const defaultProviders = [
   { name: "groq", latency: "210 ms", state: "Healthy" },
   { name: "gemini", latency: "450 ms", state: "Healthy" },
-  { name: "ollama", latency: "Ready", state: "Healthy" },
+  { name: "openrouter", latency: "Ready", state: "Healthy" },
 ];
 
 export default function DashboardLayout({
@@ -85,11 +85,42 @@ export default function DashboardLayout({
   useEffect(() => {
     void fetch("/api/health")
       .then((response) => (response.ok ? response.json() : null))
-      .then((payload: { providers?: Array<{ name: string; available: boolean; latencyMs: number | null; circuitState: string }> } | null) => {
-        if (!payload?.providers?.length) return;
-        setProviders(payload.providers.map((provider) => ({ name: provider.name, latency: provider.available ? provider.latencyMs === null ? "Ready" : `${provider.latencyMs} ms` : "Down", state: provider.available ? "Healthy" : "Degraded" })));
-        setBreakerState(payload.providers.some((provider) => provider.circuitState === "OPEN") ? "OPEN" : payload.providers.some((provider) => provider.circuitState === "HALF_OPEN") ? "HALF_OPEN" : "CLOSED");
-      })
+      .then(
+        (
+          payload: {
+            providers?: Array<{
+              name: string;
+              available: boolean;
+              latencyMs: number | null;
+              circuitState: string;
+            }>;
+          } | null,
+        ) => {
+          if (!payload?.providers?.length) return;
+          setProviders(
+            payload.providers.map((provider) => ({
+              name: provider.name,
+              latency: provider.available
+                ? provider.latencyMs === null
+                  ? "Ready"
+                  : `${provider.latencyMs} ms`
+                : "Down",
+              state: provider.available ? "Healthy" : "Degraded",
+            })),
+          );
+          setBreakerState(
+            payload.providers.some(
+              (provider) => provider.circuitState === "OPEN",
+            )
+              ? "OPEN"
+              : payload.providers.some(
+                    (provider) => provider.circuitState === "HALF_OPEN",
+                  )
+                ? "HALF_OPEN"
+                : "CLOSED",
+          );
+        },
+      )
       .catch(() => undefined);
   }, []);
   useEffect(() => {
@@ -210,7 +241,17 @@ export default function DashboardLayout({
               <Activity className="size-3.5 text-[var(--success)]" />
               Infrastructure
             </span>
-            <span className={providers.some((provider) => provider.state === "Degraded") ? "text-[var(--danger)]" : "text-[var(--success)]"}>{providers.some((provider) => provider.state === "Degraded") ? "Degraded" : "Healthy"}</span>
+            <span
+              className={
+                providers.some((provider) => provider.state === "Degraded")
+                  ? "text-[var(--danger)]"
+                  : "text-[var(--success)]"
+              }
+            >
+              {providers.some((provider) => provider.state === "Degraded")
+                ? "Degraded"
+                : "Healthy"}
+            </span>
           </div>
           <div className="space-y-1.5">
             {providers.map((provider) => (
@@ -222,7 +263,13 @@ export default function DashboardLayout({
                   <ProviderDot provider={provider.name} pulse />
                   {provider.name}
                 </span>
-                <span className={provider.state === "Degraded" ? "font-mono tabular-nums text-[var(--danger)]" : "font-mono tabular-nums text-[var(--ink-muted)]"}>
+                <span
+                  className={
+                    provider.state === "Degraded"
+                      ? "font-mono tabular-nums text-[var(--danger)]"
+                      : "font-mono tabular-nums text-[var(--ink-muted)]"
+                  }
+                >
                   {provider.latency}
                 </span>
               </div>
@@ -233,9 +280,18 @@ export default function DashboardLayout({
       <main className="min-w-0 flex-1">
         <div className="flex min-h-16 items-center justify-between gap-4 border-b border-[var(--border-hairline)] bg-[var(--surface)] px-4 sm:px-8">
           <div className="flex min-w-0 items-center gap-2.5 pl-11 text-sm sm:pl-0">
-            <span className="hidden shrink-0 text-[var(--ink-faint)] sm:inline">Workspace</span>
-            <span aria-hidden="true" className="hidden text-[var(--border-strong)] sm:inline">/</span>
-            <span className="truncate font-medium text-[var(--ink)]">{active.label}</span>
+            <span className="hidden shrink-0 text-[var(--ink-faint)] sm:inline">
+              Workspace
+            </span>
+            <span
+              aria-hidden="true"
+              className="hidden text-[var(--border-strong)] sm:inline"
+            >
+              /
+            </span>
+            <span className="truncate font-medium text-[var(--ink)]">
+              {active.label}
+            </span>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <button
@@ -245,7 +301,11 @@ export default function DashboardLayout({
               title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
               className="inline-flex size-9 items-center justify-center rounded-[var(--radius-2)] border border-[var(--border-hairline)] bg-[var(--surface)] text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--ink)]"
             >
-              {theme === "light" ? <Moon className="size-4" /> : <Sun className="size-4" />}
+              {theme === "light" ? (
+                <Moon className="size-4" />
+              ) : (
+                <Sun className="size-4" />
+              )}
             </button>
             <span className="hidden h-9 items-center gap-2 rounded-[var(--radius-2)] border border-[var(--success)]/15 bg-[var(--success-soft)] px-3 text-xs font-medium text-[var(--success)] sm:inline-flex">
               <span className="size-2 rounded-full bg-[var(--success)]" />
