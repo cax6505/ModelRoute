@@ -6,32 +6,32 @@
 // ─── Task Types ──────────────────────────────────────────────
 
 export const TASK_TYPES = [
-  'code_generation',
-  'summarization',
-  'extraction',
-  'creative_writing',
-  'reasoning',
-  'simple_qa',
-  'translation',
-  'general',
+  "code_generation",
+  "summarization",
+  "extraction",
+  "creative_writing",
+  "reasoning",
+  "simple_qa",
+  "translation",
+  "general",
 ] as const;
 
 export type TaskType = (typeof TASK_TYPES)[number];
 
 // ─── Priority Modes ──────────────────────────────────────────
 
-export const PRIORITY_MODES = ['fast', 'quality', 'cheap'] as const;
+export const PRIORITY_MODES = ["fast", "quality", "cheap"] as const;
 export type PriorityMode = (typeof PRIORITY_MODES)[number];
 
 // ─── Provider Names ──────────────────────────────────────────
 
-export const PROVIDER_NAMES = ['groq', 'gemini', 'ollama'] as const;
+export const PROVIDER_NAMES = ["groq", "gemini", "openrouter"] as const;
 export type ProviderName = (typeof PROVIDER_NAMES)[number];
 
 // ─── Messages ────────────────────────────────────────────────
 
 export interface Message {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -116,7 +116,7 @@ export class ProviderError extends Error {
     public readonly originalError?: unknown,
   ) {
     super(message);
-    this.name = 'ProviderError';
+    this.name = "ProviderError";
   }
 }
 
@@ -125,7 +125,7 @@ export class ProviderError extends Error {
 export interface ClassificationResult {
   taskType: TaskType;
   confidence: number;
-  method: 'rules' | 'llm' | 'hybrid';
+  method: "rules" | "llm" | "hybrid";
 }
 
 // ─── Routing ─────────────────────────────────────────────────
@@ -147,7 +147,7 @@ export interface RoutingRule {
 
 export interface RoutingDecision {
   taskType: TaskType;
-  classifierMode: 'rules' | 'llm' | 'hybrid';
+  classifierMode: "rules" | "llm" | "hybrid";
   classifierConfidence: number;
   provider: ProviderName;
   model: string;
@@ -161,7 +161,7 @@ export interface RoutingDecision {
 
 // ─── Circuit Breaker ─────────────────────────────────────────
 
-export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+export type CircuitState = "CLOSED" | "OPEN" | "HALF_OPEN";
 
 export interface CircuitBreakerStatus {
   provider: ProviderName;
@@ -182,7 +182,7 @@ export interface RequestLogEntry {
   promptText?: string | null;
   responseText?: string | null;
   taskType: TaskType;
-  classifierMode: 'rules' | 'llm' | 'hybrid';
+  classifierMode: "rules" | "llm" | "hybrid";
   provider: ProviderName;
   model: string;
   routingReason: string;
@@ -191,7 +191,7 @@ export interface RequestLogEntry {
   inputTokens: number;
   outputTokens: number;
   estimatedCostUsd: number;
-  status: 'success' | 'error' | 'fallback';
+  status: "success" | "error" | "fallback";
   errorMessage?: string | null;
   idempotencyKey?: string | null;
   createdAt?: string;
@@ -203,7 +203,7 @@ export interface BenchmarkPrompt {
   id: string;
   prompt: string;
   taskType: TaskType;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   expectedOutputHint?: string;
 }
 
@@ -224,7 +224,7 @@ export interface EvalRun {
   id: string;
   userId: string;
   name: string;
-  status: 'running' | 'completed' | 'failed';
+  status: "running" | "completed" | "failed";
   totalPrompts: number;
   completedPrompts: number;
   avgQualityScore?: number;
