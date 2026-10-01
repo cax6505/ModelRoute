@@ -10,7 +10,7 @@ ModelRoute is a precise control plane printed on warm paper: calm, clear, high-c
 - Ink: `#16130F`; muted ink: `#5E5A52`; faint ink: `#9A958B`.
 - Hairline border: `rgba(22,19,15,0.08)`; strong border: `rgba(22,19,15,0.14)`.
 - Accent: vermilion `#FF4A1C`, with a restrained tint and hover token reserved for active routes, focus rings, and primary actions. Keep the accent consistent in both themes.
-- Provider hues are fixed: Groq `#2F54EB`, Gemini `#0E9F8E`, Ollama `#D98A0B`.
+- Provider hues are fixed: Groq `#2F54EB`, Gemini `#0E9F8E`, and OpenRouter `#7C3AED`.
 - Status colors are success `#14803C`, warning `#B54708`, and danger `#D92D20`, each paired with a 10% tint.
 - Radius scale: 8, 12, 16, 24px. Spacing follows a 4px grid.
 - Elevation uses three warm-tinted layers: rest, raised, and floating. No harsh black shadows.
@@ -35,7 +35,7 @@ Use the shared design-system primitives for Card, Stat, Chip, ProviderDot, Segme
 
 ## Product surfaces
 
-The app shell contains the ModelRoute wordmark, six route-aware navigation items with `⌘1` through `⌘6` keycaps, an infrastructure status panel for Groq, Gemini, and Ollama, a page header, and the circuit breaker state. The dashboard routes retain their existing data flow and behavior while adopting these shared primitives.
+The app shell contains the ModelRoute wordmark, six route-aware navigation items with `⌘1` through `⌘6` keycaps, an infrastructure status panel for Groq, Gemini, and OpenRouter, a page header, and the circuit breaker state. The dashboard routes retain their existing data flow and behavior while adopting these shared primitives.
 
 The six product views are Playground Studio, Request Audit Logs, Analytics & Costs, Routing Policy, Eval Harness, and API Credentials. Each view should prioritize the primary workflow, keep dense data scannable, and use real empty, loading, error, and responsive states.
 
