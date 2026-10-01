@@ -16,11 +16,11 @@ import type {
   TaskType,
   LLMProvider,
   Message,
-} from './types';
-import { TASK_TYPES } from './types';
-import { logger } from '@/lib/logger';
+} from "./types";
+import { TASK_TYPES } from "./types";
+import { logger } from "@/lib/logger";
 
-const log = logger.child({ component: 'classifier' });
+const log = logger.child({ component: "classifier" });
 
 // ─── Rules-Based Classifier ─────────────────────────────────
 
@@ -31,12 +31,12 @@ interface ClassificationRule {
   /** Patterns in the prompt structure */
   patterns: RegExp[];
   /** Weight multiplier for prompt length heuristic */
-  lengthBias: 'short' | 'medium' | 'long' | 'any';
+  lengthBias: "short" | "medium" | "long" | "any";
 }
 
 const CLASSIFICATION_RULES: ClassificationRule[] = [
   {
-    taskType: 'creative_writing',
+    taskType: "creative_writing",
     keywords: [
       /\b(write|compose|create|craft|draft)\s+(a\s+)?(story|poem|haiku|essay|blog|article|description|narrative|dialogue|script|limerick|sonnet)\b/i,
       /\b(creative|fiction|imaginative|original)\s+(writing|piece|work|story)\b/i,
@@ -47,22 +47,20 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
       /\b(tone|style|voice|mood|genre)\b/i,
       /\b(\d+-\d+\s*words?)\b/i,
     ],
-    lengthBias: 'any',
+    lengthBias: "any",
   },
   {
-    taskType: 'translation',
+    taskType: "translation",
     keywords: [
       /\b(translate|translation|convert)\s+(this\s+)?(to|into|from)\s+\w+/i,
       /\b(in\s+(spanish|french|german|japanese|chinese|korean|portuguese|italian|russian|arabic|hindi))\b/i,
       /\b(locali[sz]e|locali[sz]ation|i18n)\b/i,
     ],
-    patterns: [
-      /\b(target\s+language|source\s+language)\b/i,
-    ],
-    lengthBias: 'any',
+    patterns: [/\b(target\s+language|source\s+language)\b/i],
+    lengthBias: "any",
   },
   {
-    taskType: 'code_generation',
+    taskType: "code_generation",
     keywords: [
       /\b(implement|build|code|function|class|method|script|program|algorithm)\b/i,
       /\b(write\s+(a\s+)?(function|class|method|script|program|module|component|hook|query|api|endpoint))\b/i,
@@ -70,26 +68,24 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
       /\b(api|endpoint|component|hook|module|package|library)\b/i,
     ],
     patterns: [
-      /```/,                           // Code blocks in prompt
+      /```/, // Code blocks in prompt
       /\b(def |function |class |const |let |var |import |from )\b/,
       /\b(return|if|else|for|while|switch)\b.*[{(]/,
     ],
-    lengthBias: 'any',
+    lengthBias: "any",
   },
   {
-    taskType: 'summarization',
+    taskType: "summarization",
     keywords: [
       /\b(summarize|summary|summarise|tldr|tl;dr|brief|overview|recap|condense|digest)\b/i,
       /\b(key\s*(points|takeaways|findings|ideas))\b/i,
       /\b(in\s*(short|brief|a\s*nutshell))\b/i,
     ],
-    patterns: [
-      /\b(bullet\s*points?|numbered\s*list)\b/i,
-    ],
-    lengthBias: 'long',
+    patterns: [/\b(bullet\s*points?|numbered\s*list)\b/i],
+    lengthBias: "long",
   },
   {
-    taskType: 'extraction',
+    taskType: "extraction",
     keywords: [
       /\b(extract|parse|find\s+all|identify|list\s+all|pull\s+out|get\s+the)\b/i,
       /\b(structured|json|csv|table|data|fields?|entities?|values?)\b/i,
@@ -98,10 +94,10 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
       /\b(from\s+(this|the|following)\s+(text|data|document|log|email))\b/i,
       /\breturn\s+(as\s+)?(json|structured|a\s+table)\b/i,
     ],
-    lengthBias: 'any',
+    lengthBias: "any",
   },
   {
-    taskType: 'reasoning',
+    taskType: "reasoning",
     keywords: [
       /\b(explain|analyze|analyse|compare|evaluate|assess|reason|deduce|infer|prove|solve)\b/i,
       /\b(why|how\s+does|what\s+causes|what\s+if|trade-?offs?|pros?\s+and\s+cons?)\b/i,
@@ -109,12 +105,12 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
     ],
     patterns: [
       /\b(step\s+by\s+step|show\s+(your\s+)?work|reasoning)\b/i,
-      /\d+\s*[\+\-\*\/\^]\s*\d+/,     // Math expressions
+      /\d+\s*[\+\-\*\/\^]\s*\d+/, // Math expressions
     ],
-    lengthBias: 'medium',
+    lengthBias: "medium",
   },
   {
-    taskType: 'simple_qa',
+    taskType: "simple_qa",
     keywords: [
       /^(what|who|when|where|which|how\s+many|how\s+much|is|are|does|do|can|will)\b/i,
       /\b(definition|meaning|difference\s+between)\b/i,
@@ -122,7 +118,7 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
     patterns: [
       /\?$/, // Ends with question mark
     ],
-    lengthBias: 'short',
+    lengthBias: "short",
   },
 ];
 
@@ -130,6 +126,49 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
  * Classify a prompt using rule-based heuristics.
  */
 export function classifyWithRules(prompt: string): ClassificationResult {
+  const normalizedPrompt = prompt.trim();
+
+  // Explicit task verbs are stronger evidence than generic question words.
+  // Resolve them first so "translate this" is not mistaken for simple QA.
+  if (
+    /\b(translate|convert)\b/i.test(normalizedPrompt) &&
+    /\b(to|into|from)\b/i.test(normalizedPrompt)
+  ) {
+    return { taskType: "translation", confidence: 0.98, method: "rules" };
+  }
+  if (
+    /\b(write|compose|create|craft|draft)\b/i.test(normalizedPrompt) &&
+    /\b(story|poem|haiku|essay|narrative|dialogue|script|limerick|sonnet|poetic names?)\b/i.test(
+      normalizedPrompt,
+    )
+  ) {
+    return { taskType: "creative_writing", confidence: 0.96, method: "rules" };
+  }
+  if (
+    /\b(extract|parse|find|identify|list|pull out|get)\b/i.test(
+      normalizedPrompt,
+    ) &&
+    /\b(email|date|timestamp|order|total|field|entity|product|quantity|json|csv|table|log)\b/i.test(
+      normalizedPrompt,
+    )
+  ) {
+    return { taskType: "extraction", confidence: 0.95, method: "rules" };
+  }
+  if (
+    /\b(summarize|summarise|summary|condense|recap|digest|key points|main conclusions)\b/i.test(
+      normalizedPrompt,
+    )
+  ) {
+    return { taskType: "summarization", confidence: 0.95, method: "rules" };
+  }
+  if (
+    /\b(help me (think|decide|organize|organise)|not sure what (approach|to do)|what should i do next|tell me something useful)\b/i.test(
+      normalizedPrompt,
+    )
+  ) {
+    return { taskType: "general", confidence: 0.9, method: "rules" };
+  }
+
   const scores: Map<TaskType, number> = new Map();
 
   // Initialize all task types with 0
@@ -158,11 +197,15 @@ export function classifyWithRules(prompt: string): ClassificationResult {
     }
 
     // Length bias
-    if (rule.lengthBias === 'short' && promptLength < 100) {
+    if (rule.lengthBias === "short" && promptLength < 100) {
       score += 1;
-    } else if (rule.lengthBias === 'medium' && promptLength >= 100 && promptLength <= 500) {
+    } else if (
+      rule.lengthBias === "medium" &&
+      promptLength >= 100 &&
+      promptLength <= 500
+    ) {
       score += 1;
-    } else if (rule.lengthBias === 'long' && promptLength > 500) {
+    } else if (rule.lengthBias === "long" && promptLength > 500) {
       score += 1;
     }
 
@@ -170,7 +213,7 @@ export function classifyWithRules(prompt: string): ClassificationResult {
   }
 
   // Find highest scoring task type
-  let bestType: TaskType = 'general';
+  let bestType: TaskType = "general";
   let bestScore = 0;
   let totalScore = 0;
 
@@ -183,19 +226,18 @@ export function classifyWithRules(prompt: string): ClassificationResult {
   }
 
   // Confidence: normalize to 0-1 based on score
-  const confidence = totalScore > 0
-    ? Math.min(bestScore / Math.max(totalScore, 1), 1)
-    : 0.1; // Very low confidence if no rules matched
+  const confidence =
+    totalScore > 0 ? Math.min(bestScore / Math.max(totalScore, 1), 1) : 0.1; // Very low confidence if no rules matched
 
   // If no rules matched at all, default to general
   if (bestScore === 0) {
-    bestType = 'general';
+    bestType = "general";
   }
 
   return {
     taskType: bestType,
     confidence: Math.round(confidence * 100) / 100,
-    method: 'rules',
+    method: "rules",
   };
 }
 
@@ -228,8 +270,8 @@ export async function classifyWithLLM(
 ): Promise<ClassificationResult> {
   // SECURITY: User input is in the user role, not concatenated into system instructions
   const messages: Message[] = [
-    { role: 'system', content: CLASSIFIER_SYSTEM_PROMPT },
-    { role: 'user', content: `Classify this prompt:\n\n${prompt}` },
+    { role: "system", content: CLASSIFIER_SYSTEM_PROMPT },
+    { role: "user", content: `Classify this prompt:\n\n${prompt}` },
   ];
 
   try {
@@ -247,22 +289,22 @@ export async function classifyWithLLM(
     if (
       parsed.taskType &&
       TASK_TYPES.includes(parsed.taskType) &&
-      typeof parsed.confidence === 'number'
+      typeof parsed.confidence === "number"
     ) {
       return {
         taskType: parsed.taskType as TaskType,
         confidence: Math.min(Math.max(parsed.confidence, 0), 1),
-        method: 'llm',
+        method: "llm",
       };
     }
 
-    log.warn('LLM classifier returned invalid format, falling back to rules', {
+    log.warn("LLM classifier returned invalid format, falling back to rules", {
       response: response.content.substring(0, 200),
     });
     return classifyWithRules(prompt);
   } catch (error) {
-    log.warn('LLM classification failed, falling back to rules', {
-      error: error instanceof Error ? error.message : 'Unknown',
+    log.warn("LLM classification failed, falling back to rules", {
+      error: error instanceof Error ? error.message : "Unknown",
     });
     return classifyWithRules(prompt);
   }
@@ -286,7 +328,7 @@ export async function classifyHybrid(
     return rulesResult;
   }
 
-  log.info('Rules confidence too low, using LLM classifier', {
+  log.info("Rules confidence too low, using LLM classifier", {
     rulesTaskType: rulesResult.taskType,
     rulesConfidence: rulesResult.confidence,
   });
@@ -294,7 +336,7 @@ export async function classifyHybrid(
   const llmResult = await classifyWithLLM(prompt, provider, model);
   return {
     ...llmResult,
-    method: 'hybrid',
+    method: "hybrid",
   };
 }
 
@@ -304,20 +346,22 @@ export async function classifyHybrid(
  */
 export async function classify(
   prompt: string,
-  mode: 'rules' | 'llm' | 'hybrid',
+  mode: "rules" | "llm" | "hybrid",
   provider?: LLMProvider,
   model?: string,
 ): Promise<ClassificationResult> {
-  if (mode === 'rules') {
+  if (mode === "rules") {
     return classifyWithRules(prompt);
   }
 
   if (!provider || !model) {
-    log.warn('LLM/hybrid mode requested but no provider available, falling back to rules');
+    log.warn(
+      "LLM/hybrid mode requested but no provider available, falling back to rules",
+    );
     return classifyWithRules(prompt);
   }
 
-  if (mode === 'llm') {
+  if (mode === "llm") {
     return classifyWithLLM(prompt, provider, model);
   }
 
