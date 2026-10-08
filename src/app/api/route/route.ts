@@ -107,9 +107,12 @@ export async function POST(request: NextRequest) {
       request.headers.get("x-real-ip") ??
       "127.0.0.1";
 
-    const rateLimitResult = await checkRateLimit(ip, userId ?? ip);
+    const rateLimitResult =
+      auth.authMethod === "dashboard"
+        ? null
+        : await checkRateLimit(ip, userId ?? ip);
 
-    if (!rateLimitResult.allowed) {
+    if (rateLimitResult && !rateLimitResult.allowed) {
       const headers = rateLimitHeaders(rateLimitResult);
       return Response.json(
         {
@@ -289,7 +292,9 @@ export async function POST(request: NextRequest) {
     });
 
     // ─── 9. Return Response ────────────────────────────────
-    const rlHeaders = rateLimitHeaders(rateLimitResult);
+    const rlHeaders = rateLimitResult
+      ? rateLimitHeaders(rateLimitResult)
+      : {};
 
     return Response.json(
       {

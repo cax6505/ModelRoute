@@ -299,7 +299,21 @@ export default function PlaygroundPage() {
         body: JSON.stringify(body),
         signal: abortController.signal,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => null)) as {
+          error?: string;
+          retryAfterMs?: number;
+        } | null;
+        const retryAfterSeconds = payload?.retryAfterMs
+          ? Math.ceil(payload.retryAfterMs / 1000)
+          : null;
+        throw new Error(
+          payload?.error ??
+            (res.status === 429
+              ? `Too many requests. Please retry in ${retryAfterSeconds ?? 60} seconds.`
+              : `HTTP ${res.status}`),
+        );
+      }
       const reader = res.body?.getReader();
       if (!reader) throw new Error("No response stream available");
       const decoder = new TextDecoder();

@@ -21,6 +21,7 @@ export const DASHBOARD_SESSION_COOKIE = "modelroute_dashboard_session";
 
 export interface AuthResult {
   authenticated: boolean;
+  authMethod?: "dashboard" | "api-key" | "supabase";
   userId?: string;
   keyId?: string;
   rateLimitRpm?: number;
@@ -32,7 +33,7 @@ export async function validateRequestAuth(
   request: NextRequest,
 ): Promise<AuthResult> {
   if (isDashboardSessionValid(request)) {
-    return { authenticated: true };
+    return { authenticated: true, authMethod: "dashboard" };
   }
 
   const apiKeyAuth = await validateApiKey(request.headers.get("authorization"));
@@ -51,7 +52,7 @@ export async function validateRequestAuth(
     });
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) return apiKeyAuth;
-    return { authenticated: true, userId: data.user.id };
+    return { authenticated: true, authMethod: "supabase", userId: data.user.id };
   } catch (error) {
     log.warn("Supabase session lookup failed", {
       error: error instanceof Error ? error.message : "Unknown",
@@ -155,6 +156,7 @@ export async function validateApiKey(
 
     return {
       authenticated: true,
+      authMethod: "api-key",
       userId: matchingKey.user_id,
       keyId: matchingKey.id,
       rateLimitRpm: matchingKey.rate_limit_rpm,
