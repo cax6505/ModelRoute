@@ -82,7 +82,22 @@ export default function DashboardLayout({
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [providers, setProviders] = useState(defaultProviders);
   const [breakerState, setBreakerState] = useState("CLOSED");
+  const [dashboardAuthenticated, setDashboardAuthenticated] = useState<
+    boolean | null
+  >(null);
+  const [dashboardKey, setDashboardKey] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
   useEffect(() => {
+    void fetch("/api/dashboard/session")
+      .then((response) => {
+        setDashboardAuthenticated(response.ok);
+      })
+      .catch(() => {
+        setDashboardAuthenticated(false);
+      });
+  }, []);
+  useEffect(() => {
+    if (!dashboardAuthenticated) return;
     void fetch("/api/health")
       .then((response) => (response.ok ? response.json() : null))
       .then(
@@ -122,7 +137,7 @@ export default function DashboardLayout({
         },
       )
       .catch(() => undefined);
-  }, []);
+  }, [dashboardAuthenticated]);
   useEffect(() => {
     const saved = window.localStorage.getItem("modelroute-theme");
     const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -149,12 +164,67 @@ export default function DashboardLayout({
     document.documentElement.dataset.theme = nextTheme;
     window.localStorage.setItem("modelroute-theme", nextTheme);
   };
+  const authenticateDashboard = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAuthError(null);
+    const response = await fetch("/api/dashboard/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: dashboardKey }),
+    });
+    if (!response.ok) {
+      setAuthError("Invalid dashboard credential.");
+      return;
+    }
+    setDashboardKey("");
+    setDashboardAuthenticated(true);
+  };
   const active =
     navItems.find(
       (item) =>
         item.href === pathname ||
         (item.href !== "/dashboard" && pathname.startsWith(item.href)),
     ) ?? navItems[0];
+  if (dashboardAuthenticated === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--canvas)] p-6 text-[var(--ink)]">
+        <p className="text-sm text-[var(--ink-muted)]">Opening workspace...</p>
+      </div>
+    );
+  }
+  if (!dashboardAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--canvas)] p-6 text-[var(--ink)]">
+        <form
+          onSubmit={authenticateDashboard}
+          className="w-full max-w-sm space-y-5 rounded-[var(--radius-3)] border border-[var(--border-hairline)] bg-[var(--surface)] p-6 shadow-[var(--shadow-rest)]"
+        >
+          <div>
+            <h1 className="font-display text-xl font-semibold">Private workspace</h1>
+            <p className="mt-2 text-sm text-[var(--ink-muted)]">
+              Enter the dashboard credential configured for this deployment.
+            </p>
+          </div>
+          <input
+            type="password"
+            value={dashboardKey}
+            onChange={(event) => setDashboardKey(event.target.value)}
+            placeholder="Dashboard credential"
+            autoComplete="current-password"
+            className="h-11 w-full rounded-[var(--radius-2)] border border-[var(--border-strong)] bg-transparent px-3 text-sm outline-none"
+            required
+          />
+          {authError && <p className="text-sm text-[var(--danger)]">{authError}</p>}
+          <button
+            type="submit"
+            className="h-11 w-full rounded-[var(--radius-2)] bg-[var(--accent)] px-4 text-sm font-medium text-white"
+          >
+            Open workspace
+          </button>
+        </form>
+      </div>
+    );
+  }
   return (
     <div className="flex min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
       <button

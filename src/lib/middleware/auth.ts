@@ -17,6 +17,7 @@ import { createServerClient } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
 
 const log = logger.child({ component: "auth" });
+export const DASHBOARD_SESSION_COOKIE = "modelroute_dashboard_session";
 
 export interface AuthResult {
   authenticated: boolean;
@@ -30,6 +31,10 @@ export interface AuthResult {
 export async function validateRequestAuth(
   request: NextRequest,
 ): Promise<AuthResult> {
+  if (isDashboardSessionValid(request)) {
+    return { authenticated: true };
+  }
+
   const apiKeyAuth = await validateApiKey(request.headers.get("authorization"));
   if (apiKeyAuth.authenticated) return apiKeyAuth;
 
@@ -52,6 +57,18 @@ export async function validateRequestAuth(
       error: error instanceof Error ? error.message : "Unknown",
     });
     return apiKeyAuth;
+  }
+
+  function isDashboardSessionValid(request: NextRequest): boolean {
+    const configuredKey = process.env.MODELROUTE_DASHBOARD_API_KEY;
+    const sessionKey = request.cookies.get(DASHBOARD_SESSION_COOKIE)?.value;
+    if (!configuredKey || !sessionKey) return false;
+
+    const expected = Buffer.from(configuredKey);
+    const actual = Buffer.from(sessionKey);
+    return (
+      expected.length === actual.length && timingSafeEqual(expected, actual)
+    );
   }
 }
 
@@ -115,16 +132,26 @@ export async function validateApiKey(
       return { authenticated: false, error: "API key has been revoked" };
     }
 
-    const { error: usageError } = await supabase
-      .from("api_keys")
-      .update({ last_used_at: new Date().toISOString() })
-      .eq("id", matchingKey.id);
-    if (usageError) {
-      log.warn("API key usage update failed", {
-        keyId: matchingKey.id,
-        error: usageError.message,
+    void Promise.resolve(
+      supabase
+        .from("api_keys")
+        .update({ last_used_at: new Date().toISOString() })
+        .eq("id", matchingKey.id),
+    )
+      .then(({ error: usageError }) => {
+        if (usageError) {
+          log.warn("API key usage update failed", {
+            keyId: matchingKey.id,
+            error: usageError.message,
+          });
+        }
+      })
+      .catch((error: unknown) => {
+        log.warn("API key usage update failed", {
+          keyId: matchingKey.id,
+          error: error instanceof Error ? error.message : "Unknown",
+        });
       });
-    }
 
     return {
       authenticated: true,

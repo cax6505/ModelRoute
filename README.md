@@ -183,6 +183,7 @@ UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
 UPSTASH_REDIS_REST_TOKEN=your-upstash-token
 
 # App Config
+MODELROUTE_DASHBOARD_API_KEY=replace-with-a-long-random-secret
 CLASSIFIER_MODE=rules
 MAX_PROMPT_LENGTH=32000
 LOG_FULL_PROMPTS=false

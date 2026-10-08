@@ -20,6 +20,7 @@ const envSchema = z
     SUPABASE_SERVICE_ROLE_KEY: z
       .string()
       .min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
+    MODELROUTE_DASHBOARD_API_KEY: z.string().min(1).optional(),
 
     // ─── LLM Providers (at least one must be configured) ──────
     GROQ_API_KEY: z.string().min(1).optional(),
