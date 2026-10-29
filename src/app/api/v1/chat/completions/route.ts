@@ -17,7 +17,7 @@ const ChatCompletionSchema = z.object({
     .min(1),
   stream: z.boolean().optional().default(false),
   priority: z.enum(["fast", "quality", "cheap"]).optional().default("quality"),
-  idempotency_key: z.string().uuid().optional(),
+  idempotency_key: z.uuid().optional(),
 });
 
 export async function POST(request: NextRequest) {

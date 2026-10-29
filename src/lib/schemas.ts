@@ -17,7 +17,7 @@ export const RouteRequestSchema = z.object({
   taskHint: z.enum(TASK_TYPES).optional(),
   priority: z.enum(PRIORITY_MODES).optional().default("quality"),
   stream: z.boolean().optional().default(false),
-  idempotencyKey: z.string().uuid().optional(),
+  idempotencyKey: z.uuid().optional(),
 });
 
 export type RouteRequest = z.infer<typeof RouteRequestSchema>;
@@ -88,7 +88,7 @@ export const StartEvalSchema = z.object({
 export type StartEvalRequest = z.infer<typeof StartEvalSchema>;
 
 export const ScoreEvalResultSchema = z.object({
-  benchmarkId: z.string().uuid(),
+  benchmarkId: z.uuid(),
   qualityScore: z.number().int().min(1).max(5),
 });
 
@@ -102,8 +102,8 @@ export const HistoryQuerySchema = z.object({
   taskType: z.enum(TASK_TYPES).optional(),
   provider: z.enum(PROVIDER_NAMES).optional(),
   status: z.enum(["success", "error", "fallback"] as const).optional(),
-  from: z.string().datetime().optional(),
-  to: z.string().datetime().optional(),
+  from: z.iso.datetime().optional(),
+  to: z.iso.datetime().optional(),
   sortBy: z
     .enum(["created_at", "latency_ms", "estimated_cost_usd"] as const)
     .optional()
@@ -132,7 +132,7 @@ export type StatsQuery = z.infer<typeof StatsQuerySchema>;
 export const ApiErrorSchema = z.object({
   error: z.string(),
   code: z.string(),
-  details: z.record(z.unknown()).optional(),
+  details: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type ApiError = z.infer<typeof ApiErrorSchema>;
